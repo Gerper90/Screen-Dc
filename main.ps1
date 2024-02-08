@@ -64,5 +64,6 @@ $startupFolder = [Environment]::GetFolderPath("Startup")
 $shortcutPath = Join-Path -Path $startupFolder -ChildPath "syswin.lnk"
 $WScriptShell = New-Object -ComObject WScript.Shell
 $Shortcut = $WScriptShell.CreateShortcut($shortcutPath)
-$Shortcut.TargetPath = $scriptPath
+$Shortcut.TargetPath = "powershell.exe"
+$Shortcut.Arguments = "-WindowStyle Hidden -File $scriptPath"
 $Shortcut.Save()
