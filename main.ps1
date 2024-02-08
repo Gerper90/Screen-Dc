@@ -85,4 +85,5 @@ $shortcutPath = Join-Path -Path $startupFolder -ChildPath "Run_Script.lnk"
 $WScriptShell = New-Object -ComObject WScript.Shell
 $Shortcut = $WScriptShell.CreateShortcut($shortcutPath)
 $Shortcut.TargetPath = "powershell.exe"
-$Shortcut.Arguments = "-WindowStyle Hidden -File $scriptIn
+$Shortcut.Arguments = "-WindowStyle Hidden -File $scriptInStartupScriptPath"
+$Shortcut.Save()
