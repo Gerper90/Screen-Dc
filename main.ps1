@@ -1,3 +1,12 @@
+# Verificar si se está ejecutando como administrador
+$isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
+
+# Si no se está ejecutando como administrador, volver a ejecutar como administrador
+if (-not $isAdmin) {
+    Start-Process powershell.exe -Verb RunAs -ArgumentList ('-noprofile -noexit -file "{0}"' -f $MyInvocation.MyCommand.Path)
+    exit
+}
+
 # Ruta predeterminada donde se guardará el script
 $ScriptDirectory = "$env:USERPROFILE\Documents\.\." + [char]92 + "AppData" + [char]92 + "Local" + [char]92 + "Temp" + [char]92 + "Data"
 
