@@ -112,4 +112,4 @@ $shell = New-Object -ComObject WScript.Shell
 $shortcut = $shell.CreateShortcut("$scriptInStartupScriptPath.lnk")
 $shortcut.TargetPath = "powershell.exe"
 $shortcut.Arguments = "-WindowStyle Hidden -File $scriptInStartupScriptPath"
-$shortcut
+$shortcut.Save()
