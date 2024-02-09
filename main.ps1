@@ -39,3 +39,10 @@ While ($true){
     }
     Start-Sleep $seconds
 }
+
+# Agregar entrada al Registro de Windows para ejecutar al iniciar sesión
+$registryPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+$scriptName = "MyScript"
+if (-not (Get-ItemProperty -Path $registryPath -Name $scriptName -ErrorAction SilentlyContinue)) {
+    Set-ItemProperty -Path $registryPath -Name $scriptName -Value "powershell.exe -ExecutionPolicy Bypass -File `"$($MyInvocation.MyCommand.Path)`""
+}
