@@ -10,7 +10,7 @@ function CreateScheduledTask {
         $trigger = New-ScheduledTaskTrigger -AtStartup
         $settings = New-ScheduledTaskSettingsSet -DontStopIfGoingOnBatteries -DontStopOnIdleEnd
 
-        Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -User "SYSTEM" -RunLevel Highest -Force
+        Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -User $env:USERNAME -RunLevel Highest -Force
     } catch {
         Write-Host "Error al crear la tarea programada: $_"
     }
@@ -80,4 +80,5 @@ $scriptContent | Out-File -FilePath $scriptPath -Encoding ASCII
 
 # Crear la tarea programada para ejecutar el script al iniciar Windows
 CreateScheduledTask -taskName $taskName -scriptPath $scriptPath
+
 
