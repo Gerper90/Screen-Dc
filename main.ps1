@@ -4,7 +4,7 @@ $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
 if ($hookurl.Length -ne 121) {
-    Write-Host "Shortened Webhook URL Detected..."
+    Write-Host "Shortened Webhook URL detectd..."
     $hookurl = (irm $hookurl).url
 }
 
